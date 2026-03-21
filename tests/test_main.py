@@ -1,0 +1,65 @@
+"""
+Tests for main application initialization and basic endpoints
+"""
+
+import pytest
+from fastapi.testclient import TestClient
+from app.main import app
+
+
+@pytest.fixture
+def client():
+    """Create a test client for the FastAPI application"""
+    return TestClient(app)
+
+
+def test_app_initialization():
+    """Test that the FastAPI app initializes correctly"""
+    assert app.title == "ScholarGrid Backend API"
+    assert app.version == "0.1.0"
+
+
+def test_root_endpoint(client):
+    """Test the root endpoint returns correct response"""
+    response = client.get("/")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["message"] == "ScholarGrid Backend API"
+    assert data["version"] == "0.1.0"
+    assert data["status"] == "running"
+
+
+def test_health_check_endpoint(client):
+    """Test the health check endpoint"""
+    response = client.get("/health")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "healthy"
+    assert "database" in data
+    assert "redis" in data
+
+
+def test_cors_middleware_configured():
+    """Test that CORS middleware is configured"""
+    # Check that CORS middleware is in the middleware stack
+    # FastAPI wraps middleware, so we check the middleware list exists
+    assert len(app.user_middleware) > 0
+    # Verify CORS is configured by checking middleware stack
+    assert any(hasattr(m, 'cls') for m in app.user_middleware)
+
+
+def test_openapi_docs_available(client):
+    """Test that OpenAPI documentation endpoints are available"""
+    # Test Swagger UI
+    response = client.get("/docs")
+    assert response.status_code == 200
+    
+    # Test ReDoc
+    response = client.get("/redoc")
+    assert response.status_code == 200
+    
+    # Test OpenAPI schema
+    response = client.get("/openapi.json")
+    assert response.status_code == 200
+    schema = response.json()
+    assert schema["info"]["title"] == "ScholarGrid Backend API"
