@@ -50,6 +50,16 @@ scholargrid-backend-api/
    # Edit .env with your configuration
    ```
 
+   Required environment variables:
+   - `DATABASE_URL`: PostgreSQL connection string
+   - `REDIS_URL`: Redis connection string
+   - `FIREBASE_CREDENTIALS_PATH`: Path to Firebase service account JSON
+   - `GEMINI_API_KEY`: Google Gemini API key (required in production)
+   - `SECRET_KEY`: Secret key for JWT tokens (must be 32+ chars in production)
+   - `CORS_ORIGINS`: Comma-separated list of allowed origins
+   - `RATE_LIMIT`: API rate limit per minute (default: 100)
+   - `ENVIRONMENT`: Environment name (development/staging/production)
+
 3. **Run the development server**:
    ```bash
    uvicorn app.main:app --reload
