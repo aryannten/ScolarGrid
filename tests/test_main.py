@@ -32,11 +32,25 @@ def test_root_endpoint(client):
 def test_health_check_endpoint(client):
     """Test the health check endpoint"""
     response = client.get("/health")
-    assert response.status_code == 200
+    
+    # Health check should return either 200 (healthy) or 503 (unhealthy)
+    assert response.status_code in [200, 503]
+    
     data = response.json()
-    assert data["status"] == "healthy"
+    assert "status" in data
+    assert data["status"] in ["healthy", "unhealthy"]
     assert "database" in data
     assert "redis" in data
+    assert data["database"] in ["connected", "disconnected"]
+    assert data["redis"] in ["connected", "disconnected"]
+    
+    # If services are disconnected, status should be unhealthy and code should be 503
+    if data["database"] == "disconnected" or data["redis"] == "disconnected":
+        assert data["status"] == "unhealthy"
+        assert response.status_code == 503
+    else:
+        assert data["status"] == "healthy"
+        assert response.status_code == 200
 
 
 def test_cors_middleware_configured():

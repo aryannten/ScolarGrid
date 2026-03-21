@@ -5,10 +5,10 @@ This module initializes the FastAPI application with CORS middleware
 and serves as the entry point for the ScholarGrid backend API.
 """
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.config import settings
+from app.core.config import settings
 
 # Initialize FastAPI application
 app = FastAPI(
@@ -41,10 +41,22 @@ async def root():
 
 
 @app.get("/health")
-async def health_check():
+async def health_check(response: Response):
     """Health check endpoint for monitoring"""
+    from app.core.database import check_db_connection
+    from app.services.redis_service import check_redis_connection
+    
+    db_status = "connected" if check_db_connection() else "disconnected"
+    redis_status = "connected" if check_redis_connection() else "disconnected"
+    
+    # Return 503 if any critical service is down
+    is_healthy = db_status == "connected" and redis_status == "connected"
+    
+    if not is_healthy:
+        response.status_code = 503
+    
     return {
-        "status": "healthy",
-        "database": "not_configured",
-        "redis": "not_configured"
+        "status": "healthy" if is_healthy else "unhealthy",
+        "database": db_status,
+        "redis": redis_status
     }

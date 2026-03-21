@@ -11,7 +11,7 @@ from pydantic import ValidationError
 
 def test_config_loads_successfully():
     """Test that configuration loads with default values"""
-    from app.config import Settings
+    from app.core.config import Settings
     
     settings = Settings()
     
@@ -23,7 +23,7 @@ def test_config_loads_successfully():
 
 def test_cors_origins_list_property():
     """Test that CORS origins are parsed correctly"""
-    from app.config import Settings
+    from app.core.config import Settings
     
     settings = Settings(cors_origins="http://localhost:3000,http://localhost:5173")
     
@@ -35,7 +35,7 @@ def test_cors_origins_list_property():
 
 def test_is_production_property():
     """Test production environment detection"""
-    from app.config import Settings
+    from app.core.config import Settings
     
     dev_settings = Settings(environment="development")
     assert dev_settings.is_production is False
@@ -50,7 +50,7 @@ def test_is_production_property():
 
 def test_invalid_database_url():
     """Test that invalid DATABASE_URL raises validation error"""
-    from app.config import Settings
+    from app.core.config import Settings
     
     with pytest.raises(ValidationError) as exc_info:
         Settings(database_url="mysql://localhost:3306/db")
@@ -60,7 +60,7 @@ def test_invalid_database_url():
 
 def test_invalid_redis_url():
     """Test that invalid REDIS_URL raises validation error"""
-    from app.config import Settings
+    from app.core.config import Settings
     
     with pytest.raises(ValidationError) as exc_info:
         Settings(redis_url="http://localhost:6379")
@@ -70,7 +70,7 @@ def test_invalid_redis_url():
 
 def test_invalid_rate_limit():
     """Test that invalid RATE_LIMIT raises validation error"""
-    from app.config import Settings
+    from app.core.config import Settings
     
     with pytest.raises(ValidationError) as exc_info:
         Settings(rate_limit=0)
@@ -80,7 +80,7 @@ def test_invalid_rate_limit():
 
 def test_production_secret_key_validation():
     """Test that production requires a secure SECRET_KEY"""
-    from app.config import Settings
+    from app.core.config import Settings
     
     # Should fail with default dev secret key
     with pytest.raises(ValidationError) as exc_info:
@@ -111,7 +111,7 @@ def test_production_secret_key_validation():
 
 def test_production_gemini_api_key_validation():
     """Test that production requires GEMINI_API_KEY"""
-    from app.config import Settings
+    from app.core.config import Settings
     
     with pytest.raises(ValidationError) as exc_info:
         Settings(

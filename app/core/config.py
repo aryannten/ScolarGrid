@@ -7,11 +7,18 @@ Loads configuration from environment variables with validation and defaults.
 import os
 import sys
 from typing import List
-from pydantic import BaseSettings, validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import field_validator, computed_field
 
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables"""
+    
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False
+    )
     
     # Application
     app_name: str = "ScholarGrid Backend API"
@@ -37,15 +44,11 @@ class Settings(BaseSettings):
     # Rate Limiting
     rate_limit: int = 100
     
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = False
-    
-    @validator("secret_key")
-    def validate_secret_key(cls, v, values):
+    @field_validator("secret_key")
+    @classmethod
+    def validate_secret_key(cls, v, info):
         """Validate SECRET_KEY is set properly in production"""
-        environment = values.get("environment", "development")
+        environment = info.data.get("environment", "development")
         if environment.lower() == "production":
             if v == "dev-secret-key-change-in-production" or len(v) < 32:
                 raise ValueError(
@@ -53,7 +56,8 @@ class Settings(BaseSettings):
                 )
         return v
     
-    @validator("database_url")
+    @field_validator("database_url")
+    @classmethod
     def validate_database_url(cls, v):
         """Validate DATABASE_URL is properly formatted"""
         if not v.startswith(("postgresql://", "postgresql+asyncpg://")):
@@ -62,7 +66,8 @@ class Settings(BaseSettings):
             )
         return v
     
-    @validator("redis_url")
+    @field_validator("redis_url")
+    @classmethod
     def validate_redis_url(cls, v):
         """Validate REDIS_URL is properly formatted"""
         if not v.startswith("redis://"):
@@ -71,35 +76,40 @@ class Settings(BaseSettings):
             )
         return v
     
-    @validator("firebase_credentials_path")
+    @field_validator("firebase_credentials_path")
+    @classmethod
     def validate_firebase_credentials(cls, v):
         """Validate Firebase credentials file exists"""
         if not os.path.exists(v):
             print(f"Warning: Firebase credentials file not found at {v}", file=sys.stderr)
         return v
     
-    @validator("gemini_api_key")
-    def validate_gemini_api_key(cls, v, values):
+    @field_validator("gemini_api_key")
+    @classmethod
+    def validate_gemini_api_key(cls, v, info):
         """Validate GEMINI_API_KEY is set in production"""
-        environment = values.get("environment", "development")
+        environment = info.data.get("environment", "development")
         if environment.lower() == "production" and not v:
             raise ValueError(
                 "GEMINI_API_KEY must be set in production environment"
             )
         return v
     
-    @validator("rate_limit")
+    @field_validator("rate_limit")
+    @classmethod
     def validate_rate_limit(cls, v):
         """Validate RATE_LIMIT is a positive integer"""
         if v <= 0:
             raise ValueError("RATE_LIMIT must be a positive integer")
         return v
     
+    @computed_field
     @property
     def cors_origins_list(self) -> List[str]:
         """Parse CORS origins from comma-separated string"""
         return [origin.strip() for origin in self.cors_origins.split(",")]
     
+    @computed_field
     @property
     def is_production(self) -> bool:
         """Check if running in production environment"""

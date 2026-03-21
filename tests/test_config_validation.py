@@ -10,7 +10,7 @@ import pytest
 
 def test_validate_configuration_success():
     """Test that validate_configuration succeeds with valid config"""
-    from app.config import validate_configuration
+    from app.core.config import validate_configuration
     
     settings = validate_configuration()
     
@@ -22,7 +22,7 @@ def test_validate_configuration_success():
 def test_configuration_from_env_file():
     """Test that configuration loads from .env file"""
     # This test verifies the Config class is set up correctly
-    from app.config import Settings
+    from app.core.config import Settings
     
     settings = Settings()
     
@@ -34,7 +34,7 @@ def test_configuration_from_env_file():
 
 def test_production_validation_checks():
     """Test that production environment has additional validation"""
-    from app.config import Settings
+    from app.core.config import Settings
     
     # Test that production requires secure secret key
     with pytest.raises(Exception) as exc_info:
