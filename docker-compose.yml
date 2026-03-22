@@ -1,0 +1,103 @@
+version: "3.9"
+
+services:
+  # ─── FastAPI Application ───────────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: scholargrid_api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+psycopg://scholargrid:scholargrid_pass@postgres:5432/scholargrid
+      REDIS_URL: redis://redis:6379/0
+      FIREBASE_CREDENTIALS_PATH: /app/firebase-credentials.json
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      SECRET_KEY: ${SECRET_KEY:-dev-secret-key-change-in-production}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://localhost:5173}
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      RATE_LIMIT: ${RATE_LIMIT:-100}
+    volumes:
+      - ./firebase-credentials.json:/app/firebase-credentials.json:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - scholargrid_net
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  # ─── PostgreSQL Database ───────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: scholargrid_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: scholargrid
+      POSTGRES_USER: scholargrid
+      POSTGRES_PASSWORD: scholargrid_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - scholargrid_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U scholargrid -d scholargrid"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── Redis Cache ───────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: scholargrid_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - scholargrid_net
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── Alembic Migrations (runs once on startup) ─────────────────────────────
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: scholargrid_migrate
+    command: ["alembic", "upgrade", "head"]
+    environment:
+      DATABASE_URL: postgresql+psycopg://scholargrid:scholargrid_pass@postgres:5432/scholargrid
+      REDIS_URL: redis://redis:6379/0
+      FIREBASE_CREDENTIALS_PATH: /app/firebase-credentials.json
+    volumes:
+      - ./firebase-credentials.json:/app/firebase-credentials.json:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - scholargrid_net
+    restart: "no"
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  scholargrid_net:
+    driver: bridge

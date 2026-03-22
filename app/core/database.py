@@ -19,6 +19,7 @@ engine = create_engine(
     max_overflow=20,  # Maximum number of connections that can be created beyond pool_size
     pool_pre_ping=True,  # Verify connections before using them
     pool_recycle=3600,  # Recycle connections after 1 hour to prevent stale connections
+    connect_args={"connect_timeout": 3},  # Keep health checks responsive when PostgreSQL is unavailable
     echo=False,  # Set to True for SQL query logging during development
 )
 

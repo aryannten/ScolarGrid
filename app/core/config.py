@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     secret_key: str = "dev-secret-key-change-in-production"
     
     # Database
-    database_url: str = "postgresql://user:password@localhost:5432/scholargrid"
+    database_url: str = "postgresql+psycopg://user:password@localhost:5432/scholargrid"
     
     # Redis
     redis_url: str = "redis://localhost:6379/0"
@@ -60,7 +60,7 @@ class Settings(BaseSettings):
     @classmethod
     def validate_database_url(cls, v):
         """Validate DATABASE_URL is properly formatted"""
-        if not v.startswith(("postgresql://", "postgresql+asyncpg://")):
+        if not v.startswith(("postgresql://", "postgresql+psycopg://", "postgresql+asyncpg://")):
             raise ValueError(
                 "DATABASE_URL must be a valid PostgreSQL connection string"
             )
@@ -160,3 +160,14 @@ def validate_configuration():
 
 # Global settings instance with validation
 settings = validate_configuration()
+
+# Compatibility shim for tests still expecting Pydantic v1-style Settings.Config.
+Settings.Config = type(
+    "Config",
+    (),
+    {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+        "case_sensitive": False,
+    },
+)

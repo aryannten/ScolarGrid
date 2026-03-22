@@ -1,5 +1,7 @@
 """
-API v1 routes for ScholarGrid Backend API
-
-This module contains version 1 of the API endpoints.
+API v1 package — imports all routers for use in main.py
 """
+
+from app.api.v1 import auth, notes, leaderboard, chat, complaints, admin, ai_chatbot, activity
+
+__all__ = ["auth", "notes", "leaderboard", "chat", "complaints", "admin", "ai_chatbot", "activity"]

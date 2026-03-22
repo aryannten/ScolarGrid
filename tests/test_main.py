@@ -24,9 +24,10 @@ def test_root_endpoint(client):
     response = client.get("/")
     assert response.status_code == 200
     data = response.json()
-    assert data["message"] == "ScholarGrid Backend API"
+    assert data["service"] == "ScholarGrid Backend API"
     assert data["version"] == "0.1.0"
-    assert data["status"] == "running"
+    assert data["environment"] in ["development", "production", "staging"]
+    assert data["docs"] == "/docs"
 
 
 def test_health_check_endpoint(client):
