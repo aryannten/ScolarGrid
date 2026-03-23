@@ -234,7 +234,7 @@ def upgrade() -> None:
         sa.Column('type', sa.String(length=50), nullable=False),
         sa.Column('user_id', postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column('entity_id', postgresql.UUID(as_uuid=True), nullable=True),
-        sa.Column('metadata', postgresql.JSON(astext_type=sa.Text()), nullable=True),
+        sa.Column('metadata', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
         sa.Column('created_at', sa.TIMESTAMP(timezone=True), nullable=False, server_default=sa.text('NOW()')),
         sa.CheckConstraint("type IN ('note_upload', 'user_registration', 'high_rating')", name='check_activity_type'),
         sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),

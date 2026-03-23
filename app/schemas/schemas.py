@@ -23,6 +23,7 @@ class UserRegisterRequest(BaseModel):
 class UserUpdateRequest(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=100)
     about: Optional[str] = None
+    avatar_url: Optional[str] = None
 
 
 class UserResponse(BaseModel):

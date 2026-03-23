@@ -4,8 +4,10 @@ Authentication and user profile routes for ScholarGrid Backend API
 Handles user registration, profile retrieval, and profile updates.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi.exceptions import RequestValidationError
 from sqlalchemy.orm import Session
+from pydantic import ValidationError
 
 from app.core.database import get_db
 from app.core.auth import get_current_user
@@ -16,6 +18,39 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 # Cache TTL for user profiles (15 minutes)
 PROFILE_CACHE_TTL = 900
+
+
+# ─── TEST ENDPOINT (NO FIREBASE REQUIRED) ────────────────────────────────────
+@router.post("/test-register", response_model=UserResponse, status_code=201)
+async def test_register(
+    email: str,
+    name: str,
+    db: Session = Depends(get_db),
+):
+    """
+    TEST ONLY: Create a user without Firebase authentication.
+    This bypasses Firebase and creates a user directly in the database.
+    """
+    import uuid
+    
+    # Check if user exists
+    existing = db.query(User).filter(User.email == email).first()
+    if existing:
+        return existing
+    
+    # Create test user
+    user = User(
+        firebase_uid=f"test-{uuid.uuid4()}",
+        email=email,
+        name=name,
+        role="student",
+        status="active",
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    
+    return user
 
 
 @router.post("/register", response_model=UserResponse, status_code=201)
@@ -89,26 +124,58 @@ async def get_me(
     return result
 
 
-@router.put("/me", response_model=UserResponse)
+@router.put(
+    "/me",
+    response_model=UserResponse,
+    openapi_extra={
+        "requestBody": {
+            "required": False,
+            "content": {
+                "application/json": {"schema": UserUpdateRequest.model_json_schema()},
+                "application/x-www-form-urlencoded": {
+                    "schema": UserUpdateRequest.model_json_schema()
+                },
+                "multipart/form-data": {"schema": UserUpdateRequest.model_json_schema()},
+            },
+        }
+    },
+)
 async def update_me(
-    body: UserUpdateRequest,
-    avatar: UploadFile = File(None),
+    request: Request,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Update the authenticated user's profile (name, about, avatar)."""
+    """Update the authenticated user's profile (name, about, avatar_url)."""
+    body = None
+    content_type = request.headers.get("content-type", "")
+
+    try:
+        if "application/json" in content_type:
+            payload = await request.json()
+            body = UserUpdateRequest.model_validate(payload)
+        elif (
+            "application/x-www-form-urlencoded" in content_type
+            or "multipart/form-data" in content_type
+        ):
+            form = await request.form()
+            body = UserUpdateRequest.model_validate(dict(form))
+        else:
+            payload = await request.body()
+            if payload:
+                raise HTTPException(
+                    status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+                    detail="Unsupported content type for profile update.",
+                )
+            body = UserUpdateRequest()
+    except ValidationError as exc:
+        raise RequestValidationError(exc.errors()) from exc
+
     if body.name is not None:
         current_user.name = body.name
     if body.about is not None:
         current_user.about = body.about
-
-    if avatar is not None:
-        try:
-            from app.services.firebase_service import upload_file_to_storage, ALLOWED_EXTENSIONS
-            url, _, _ = await upload_file_to_storage(avatar, "avatars/", ALLOWED_EXTENSIONS["avatars"])
-            current_user.avatar_url = url
-        except Exception as e:
-            raise HTTPException(status_code=400, detail=f"Avatar upload failed: {str(e)}")
+    if body.avatar_url is not None:
+        current_user.avatar_url = body.avatar_url
 
     db.commit()
     db.refresh(current_user)

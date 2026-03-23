@@ -28,6 +28,32 @@ router = APIRouter(prefix="/notes", tags=["Notes"])
 
 MAX_FILE_SIZE = 50 * 1024 * 1024  # 50 MB
 NOTE_ALLOWED_TYPES = {".pdf", ".doc", ".docx", ".ppt", ".pptx"}
+
+
+# ─── TEST ENDPOINT (NO AUTH REQUIRED) ─────────────────────────────────────────
+@router.post("/test-upload")
+async def test_upload(file: UploadFile = File(...)):
+    """
+    TEST ONLY: Upload a file to Cloudinary without authentication.
+    This tests the Cloudinary integration without requiring Firebase auth.
+    """
+    from app.services.cloudinary_storage import upload_file_to_storage, STORAGE_FOLDERS, ALLOWED_EXTENSIONS
+    
+    try:
+        file_url, filename, file_size = await upload_file_to_storage(
+            file, STORAGE_FOLDERS['notes'], ALLOWED_EXTENSIONS['notes']
+        )
+        return {
+            "success": True,
+            "file_url": file_url,
+            "filename": filename,
+            "file_size": file_size,
+            "message": "Cloudinary upload successful!"
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
 NOTE_CACHE_TTL = 600  # 10 minutes
 
 
@@ -44,12 +70,12 @@ async def upload_note(
     db: Session = Depends(get_db),
 ):
     """Upload a new educational note (PDF, PPT, DOC). Sets status to 'pending'."""
-    from app.services.firebase_service import upload_file_to_storage
+    from app.services.cloudinary_storage import upload_file_to_storage, STORAGE_FOLDERS, ALLOWED_EXTENSIONS
 
     # Validate and upload file
     try:
         file_url, filename, file_size = await upload_file_to_storage(
-            file, "notes/", NOTE_ALLOWED_TYPES
+            file, STORAGE_FOLDERS['notes'], ALLOWED_EXTENSIONS['notes']
         )
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
@@ -329,17 +355,18 @@ async def delete_note(
     current_user: User = Depends(require_admin),
     db: Session = Depends(get_db),
 ):
-    """Delete a note and its file from Firebase Storage (admin only)."""
+    """Delete a note and its file from Cloudinary Storage (admin only)."""
     note = db.query(Note).filter(Note.id == note_id).first()
     if not note:
         raise HTTPException(status_code=404, detail="Note not found.")
 
-    # Delete from Firebase Storage
+    # Delete from Cloudinary Storage
     try:
-        from app.services.firebase_service import delete_file_from_storage
+        from app.services.cloudinary_storage import delete_file_from_storage, STORAGE_FOLDERS
         import pathlib
-        folder = f"notes/{note.file_name}"
-        await delete_file_from_storage(folder)
+        # Extract public_id from file_name (remove extension)
+        public_id = f"{STORAGE_FOLDERS['notes']}/{pathlib.Path(note.file_name).stem}"
+        await delete_file_from_storage(public_id)
     except Exception:
         pass
 

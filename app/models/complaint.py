@@ -10,7 +10,7 @@ from datetime import datetime
 from typing import Any, Dict, Optional
 import uuid
 
-from sqlalchemy import JSON, CheckConstraint, ForeignKey, Index, String, Text, TIMESTAMP, desc
+from sqlalchemy import CheckConstraint, ForeignKey, Index, String, Text, TIMESTAMP, JSON, desc
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -244,7 +244,6 @@ class Activity(Base):
             name="check_activity_type",
         ),
         Index("idx_activities_created_at", desc("created_at")),
-        Index("idx_activities_metadata", "metadata", postgresql_using="gin"),
     )
 
     def __repr__(self) -> str:

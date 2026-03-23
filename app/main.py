@@ -167,13 +167,27 @@ async def metrics():
 
 @app.on_event("startup")
 async def startup():
-    """Connect Redis on startup."""
+    """Connect Redis, initialize Cloudinary and Firebase on startup."""
     try:
         from app.services.redis_service import redis_client
         redis_client.connect()
         logger.info("Redis connected.")
     except Exception as e:
         logger.warning(f"Redis connection failed on startup: {e}")
+    
+    try:
+        from app.services.cloudinary_storage import initialize_cloudinary
+        initialize_cloudinary()
+        logger.info("Cloudinary initialized.")
+    except Exception as e:
+        logger.warning(f"Cloudinary initialization failed on startup: {e}")
+    
+    try:
+        from app.services.firebase_service import initialize_firebase
+        initialize_firebase()
+        logger.info("Firebase initialized.")
+    except Exception as e:
+        logger.warning(f"Firebase initialization failed on startup: {e}")
 
 
 @app.on_event("shutdown")

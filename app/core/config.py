@@ -35,6 +35,11 @@ class Settings(BaseSettings):
     # Firebase
     firebase_credentials_path: str = "./firebase-credentials.json"
     
+    # Cloudinary (Free cloud storage - 25GB storage, 25GB bandwidth/month)
+    cloudinary_cloud_name: str = ""
+    cloudinary_api_key: str = ""
+    cloudinary_api_secret: str = ""
+    
     # Google Gemini API
     gemini_api_key: str = ""
     
@@ -82,6 +87,30 @@ class Settings(BaseSettings):
         """Validate Firebase credentials file exists"""
         if not os.path.exists(v):
             print(f"Warning: Firebase credentials file not found at {v}", file=sys.stderr)
+        return v
+    
+    @field_validator("cloudinary_cloud_name")
+    @classmethod
+    def validate_cloudinary_cloud_name(cls, v, info):
+        """Validate CLOUDINARY_CLOUD_NAME is set"""
+        if not v:
+            print("Warning: CLOUDINARY_CLOUD_NAME not set - file uploads will fail", file=sys.stderr)
+        return v
+    
+    @field_validator("cloudinary_api_key")
+    @classmethod
+    def validate_cloudinary_api_key(cls, v, info):
+        """Validate CLOUDINARY_API_KEY is set"""
+        if not v:
+            print("Warning: CLOUDINARY_API_KEY not set - file uploads will fail", file=sys.stderr)
+        return v
+    
+    @field_validator("cloudinary_api_secret")
+    @classmethod
+    def validate_cloudinary_api_secret(cls, v, info):
+        """Validate CLOUDINARY_API_SECRET is set"""
+        if not v:
+            print("Warning: CLOUDINARY_API_SECRET not set - file uploads will fail", file=sys.stderr)
         return v
     
     @field_validator("gemini_api_key")

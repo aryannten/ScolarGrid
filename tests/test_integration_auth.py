@@ -11,12 +11,12 @@ from unittest.mock import patch, AsyncMock
 
 # ─── Auth: unauthenticated requests return 403 ────────────────────────────────
 
-def test_unauthed_request_rejected(client):
+def test_unauthed_request_rejected():
     """Endpoint requiring auth must return 403/401 without a token."""
     from fastapi.testclient import TestClient
     from app.main import app
-    bare = TestClient(app)
-    response = bare.get("/api/v1/auth/me")
+    with TestClient(app) as bare:
+        response = bare.get("/api/v1/auth/me")
     assert response.status_code in (401, 403, 422)
 
 

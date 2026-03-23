@@ -135,6 +135,7 @@ class TestAPIDocumentationCompleteness:
         public_endpoints = {
             ("/", "get"),
             ("/health", "get"),
+            ("/metrics", "get"),
             ("/docs", "get"),
             ("/redoc", "get"),
             ("/openapi.json", "get"),

@@ -1,7 +1,7 @@
 """
 Shared pytest fixtures for ScholarGrid Backend API tests.
 
-Provides in-memory SQLite database sessions, sample data fixtures,
+Provides PostgreSQL test database sessions, sample data fixtures,
 and FastAPI TestClient with auth bypass for integration tests.
 """
 
@@ -9,6 +9,7 @@ import uuid
 import pytest
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
+import os
 
 from app.core.database import Base, get_db
 from app.models.user import User
@@ -21,15 +22,20 @@ from app.models.complaint import Complaint
 
 @pytest.fixture(scope="session")
 def test_engine():
-    """Create a single session-scoped in-memory SQLite engine."""
-    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False})
-
-    @event.listens_for(engine, "connect")
-    def enable_fk(conn, _):
-        conn.execute("PRAGMA foreign_keys=ON")
-
+    """Create a single session-scoped PostgreSQL test database engine."""
+    # Use test database URL from environment - PostgreSQL only, no SQLite fallback
+    test_db_url = os.getenv(
+        "TEST_DATABASE_URL",
+        "postgresql+psycopg://postgres:Aryan@localhost:5432/scholargrid_test"
+    )
+    
+    engine = create_engine(test_db_url, pool_pre_ping=True)
+    
+    # Create all tables
     Base.metadata.create_all(engine)
     yield engine
+    
+    # Drop all tables after tests
     Base.metadata.drop_all(engine)
 
 

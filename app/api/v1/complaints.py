@@ -38,9 +38,9 @@ async def submit_complaint(
     screenshot_url = None
     if screenshot:
         try:
-            from app.services.firebase_service import upload_file_to_storage, ALLOWED_EXTENSIONS
+            from app.services.cloudinary_storage import upload_file_to_storage, STORAGE_FOLDERS, ALLOWED_EXTENSIONS
             url, _, _ = await upload_file_to_storage(
-                screenshot, "complaint_attachments/", ALLOWED_EXTENSIONS["complaint_attachments"]
+                screenshot, STORAGE_FOLDERS['complaint_attachments'], ALLOWED_EXTENSIONS["complaint_attachments"]
             )
             screenshot_url = url
         except Exception as e:

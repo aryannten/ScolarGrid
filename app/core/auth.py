@@ -39,7 +39,8 @@ async def get_current_user(
         HTTPException 401: If user account is suspended
     """
     token = credentials.credentials
-
+    
+    # Verify Firebase token
     try:
         from app.services.firebase_service import verify_firebase_token
         decoded_token = await verify_firebase_token(token)

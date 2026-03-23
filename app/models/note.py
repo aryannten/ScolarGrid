@@ -6,7 +6,6 @@ This module defines the Note model representing uploaded educational materials.
 
 from sqlalchemy import String, Integer, Text, TIMESTAMP, CheckConstraint, Index, DECIMAL, BigInteger, ForeignKey, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.dialects.postgresql import ARRAY as PG_ARRAY
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy import JSON
 from datetime import datetime
@@ -26,7 +25,7 @@ class Note(Base):
         title: Note title
         description: Detailed description of the note content
         subject: Academic subject category
-        tags: Array of tags for categorization (PostgreSQL ARRAY, JSON in SQLite)
+        tags: JSON array of tags for categorization
         file_url: Firebase Storage URL for the uploaded file
         file_name: Original filename
         file_size: File size in bytes
@@ -68,9 +67,9 @@ class Note(Base):
         index=True
     )
     
-    # Tags field - uses PostgreSQL ARRAY in production, JSON in SQLite for testing
+    # Tags are stored as a JSON array for flexible querying and transport.
     tags: Mapped[List[str]] = mapped_column(
-        JSON,  # Use JSON for SQLite compatibility
+        JSON,
         nullable=True,
         default=None
     )

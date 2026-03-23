@@ -7,6 +7,7 @@ Returns consistent JSON error responses for all error types.
 from datetime import datetime, timezone
 from uuid import uuid4
 from fastapi import Request
+from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 
@@ -14,14 +15,16 @@ from fastapi.exceptions import RequestValidationError
 def make_error(request: Request, status_code: int, error_code: str, message: str, details=None):
     return JSONResponse(
         status_code=status_code,
-        content={
-            "error": error_code,
-            "message": message,
-            "details": details,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "request_id": str(uuid4()),
-            "path": str(request.url.path),
-        },
+        content=jsonable_encoder(
+            {
+                "error": error_code,
+                "message": message,
+                "details": details,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "request_id": str(uuid4()),
+                "path": str(request.url.path),
+            }
+        ),
     )
 
 

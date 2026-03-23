@@ -7,6 +7,7 @@ and group deletion cascade properties.
 
 import pytest
 import string
+import uuid
 from hypothesis import given, settings as hyp_settings, HealthCheck
 from hypothesis import strategies as st
 from sqlalchemy import create_engine, event
@@ -89,13 +90,21 @@ def test_property_member_count_always_at_least_one(extra_members, engine):
     Session = sessionmaker(bind=engine)
     db = Session()
     try:
-        u = _user(db, f"mc_{extra_members}_{id(db)}")
+        # Use unique identifiers to avoid conflicts
+        unique_id = f"{extra_members}_{id(db)}_{uuid.uuid4().hex[:4]}"
+        u = _user(db, f"mc_{unique_id}")
         g = ChatGroup(
-            name="G", join_code=f"MC{id(db)}"[:8],
+            name="G", join_code=f"MC{uuid.uuid4().hex[:6]}".upper(),
             creator_id=u.id, member_count=1 + extra_members,
         )
         db.add(g)
+        db.flush()
+        
+        # Create the membership for the creator
+        membership = ChatMembership(group_id=g.id, user_id=u.id)
+        db.add(membership)
         db.commit()
+        
         assert g.member_count >= 1
     finally:
         db.rollback()
