@@ -4,8 +4,11 @@ Google Gemini AI service for ScholarGrid Backend API
 Provides AI chatbot functionality with academic context awareness.
 """
 
+import logging
 from typing import Optional, List, Dict, AsyncIterator
 from app.core.config import settings
+
+logger = logging.getLogger(__name__)
 
 SYSTEM_PROMPT = """You are ScholarGrid Assistant, an AI helper for the ScholarGrid academic note-sharing platform.
 
@@ -32,13 +35,37 @@ Limitations:
 
 
 def get_gemini_client():
-    """Initialize and return the Gemini generative model."""
-    import google.generativeai as genai
-    genai.configure(api_key=settings.gemini_api_key)
-    return genai.GenerativeModel(
-        model_name="gemini-1.5-flash",
-        system_instruction=SYSTEM_PROMPT,
-    )
+    """
+    Initialize and return the Gemini generative model.
+    
+    Returns:
+        GenerativeModel: Configured Gemini model instance
+        
+    Raises:
+        ValueError: If GEMINI_API_KEY is not configured
+        Exception: If model initialization fails
+    """
+    if not settings.gemini_api_key:
+        raise ValueError(
+            "GEMINI_API_KEY is not configured. Please set it in your environment variables."
+        )
+    
+    try:
+        import google.generativeai as genai
+        genai.configure(api_key=settings.gemini_api_key)
+        return genai.GenerativeModel(
+            model_name="gemini-1.5-flash",
+            system_instruction=SYSTEM_PROMPT,
+        )
+    except ImportError as e:
+        logger.error(f"Failed to import google.generativeai: {e}")
+        raise Exception(
+            "Google Generative AI library not installed. "
+            "Please install it with: pip install google-generativeai"
+        )
+    except Exception as e:
+        logger.error(f"Failed to initialize Gemini client: {e}")
+        raise Exception(f"Failed to initialize Gemini client: {str(e)}")
 
 
 async def send_message(
@@ -58,16 +85,52 @@ async def send_message(
         str: AI response text
 
     Raises:
+        ValueError: If message is empty or invalid
         Exception: If Gemini API call fails
     """
+    if not message or not message.strip():
+        raise ValueError("Message cannot be empty")
+    
+    if len(message) > 10000:
+        raise ValueError("Message is too long (max 10000 characters)")
+    
     try:
         model = get_gemini_client()
         chat = model.start_chat(history=history or [])
         full_message = f"{context}\n\n{message}" if context else message
+        
+        logger.info(f"Sending message to Gemini API (length: {len(full_message)})")
         response = await _run_sync(chat.send_message, full_message)
+        
+        if not response or not response.text:
+            logger.error("Gemini API returned empty response")
+            raise Exception("AI service returned an empty response")
+        
+        logger.info(f"Received response from Gemini API (length: {len(response.text)})")
         return response.text
+        
+    except ValueError as e:
+        # Re-raise validation errors
+        raise
     except Exception as e:
-        raise Exception(f"Gemini API error: {str(e)}")
+        logger.error(f"Gemini API error: {str(e)}", exc_info=True)
+        # Provide user-friendly error message
+        if "quota" in str(e).lower():
+            raise Exception(
+                "AI service quota exceeded. Please try again later."
+            )
+        elif "api key" in str(e).lower():
+            raise Exception(
+                "AI service authentication failed. Please contact support."
+            )
+        elif "timeout" in str(e).lower():
+            raise Exception(
+                "AI service request timed out. Please try again."
+            )
+        else:
+            raise Exception(
+                f"AI service is temporarily unavailable. Please try again later."
+            )
 
 
 async def send_message_stream(
@@ -75,22 +138,70 @@ async def send_message_stream(
     history: List[Dict] = None,
     context: str = "",
 ) -> AsyncIterator[str]:
-    """Stream Gemini response chunks."""
+    """
+    Stream Gemini response chunks.
+    
+    Args:
+        message: User's message
+        history: List of previous messages in format [{"role": ..., "parts": [...]}]
+        context: Additional context string to prepend to the message
+        
+    Yields:
+        str: Response text chunks as they arrive
+        
+    Raises:
+        ValueError: If message is empty or invalid
+        Exception: If Gemini API streaming fails
+    """
+    if not message or not message.strip():
+        raise ValueError("Message cannot be empty")
+    
+    if len(message) > 10000:
+        raise ValueError("Message is too long (max 10000 characters)")
+    
     try:
         model = get_gemini_client()
         chat = model.start_chat(history=history or [])
         full_message = f"{context}\n\n{message}" if context else message
 
+        logger.info(f"Starting streaming response from Gemini API (length: {len(full_message)})")
+        
         import asyncio
         loop = asyncio.get_event_loop()
         response = await loop.run_in_executor(
             None, lambda: chat.send_message(full_message, stream=True)
         )
+        
+        chunk_count = 0
         for chunk in response:
             if chunk.text:
+                chunk_count += 1
                 yield chunk.text
+        
+        logger.info(f"Streaming completed with {chunk_count} chunks")
+        
+    except ValueError as e:
+        # Re-raise validation errors
+        raise
     except Exception as e:
-        raise Exception(f"Gemini streaming error: {str(e)}")
+        logger.error(f"Gemini streaming error: {str(e)}", exc_info=True)
+        # Provide user-friendly error message
+        if "quota" in str(e).lower():
+            raise Exception(
+                "AI service quota exceeded. Please try again later."
+            )
+        elif "api key" in str(e).lower():
+            raise Exception(
+                "AI service authentication failed. Please contact support."
+            )
+        elif "timeout" in str(e).lower():
+            raise Exception(
+                "AI service request timed out. Please try again."
+            )
+        else:
+            raise Exception(
+                f"AI service streaming is temporarily unavailable. Please try again later."
+            )
 
 
 async def _run_sync(func, *args):
