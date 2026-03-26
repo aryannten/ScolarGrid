@@ -1,0 +1,15 @@
+.git
+.gitignore
+.pytest_cache
+.hypothesis
+.tmp
+.kiro
+venv
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.env
+firebase-credentials.json
+tests
+scholargrid_backend_api.egg-info
