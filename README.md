@@ -177,12 +177,12 @@ Google Gemini AI integration:
    git clone <repository-url>
    cd scholargrid-backend-api
    cp .env.example .env
-   # Edit .env with your configuration
+   # Edit .env and make sure firebase-credentials.json exists in the project root
    ```
 
 2. **Start services**:
    ```bash
-   docker-compose up -d
+   docker compose up --build
    ```
 
 3. **Access the API**:

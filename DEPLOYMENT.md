@@ -37,7 +37,7 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 ```bash
 # Start all services (API + PostgreSQL + Redis + auto-migrate)
-docker compose up -d
+docker compose up --build
 
 # View logs
 docker compose logs -f api
