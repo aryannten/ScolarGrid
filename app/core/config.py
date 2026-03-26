@@ -49,6 +49,15 @@ class Settings(BaseSettings):
     # Rate Limiting
     rate_limit: int = 100
     
+    # Error Tracking (Sentry)
+    sentry_dsn: str = ""
+    
+    # Monitoring
+    enable_metrics: bool = False
+    
+    # Logging
+    log_level: str = "INFO"
+    
     @field_validator("secret_key")
     @classmethod
     def validate_secret_key(cls, v, info):

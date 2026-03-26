@@ -6,6 +6,7 @@ rating, and admin moderation (approve, reject, delete).
 """
 
 import math
+from decimal import Decimal
 from typing import Optional, List
 from uuid import UUID
 
@@ -23,6 +24,12 @@ from app.schemas.schemas import (
     NoteResponse, NoteListResponse, NoteRejectRequest,
     NoteDownloadResponse, RatingRequest, RatingResponse,
 )
+from app.services.scoring_service import (
+    quantize_decimal,
+    recalculate_on_note_status_change,
+    recalculate_on_rating_change,
+    update_user_score_and_tier,
+)
 
 router = APIRouter(prefix="/notes", tags=["Notes"])
 
@@ -31,7 +38,7 @@ NOTE_ALLOWED_TYPES = {".pdf", ".doc", ".docx", ".ppt", ".pptx"}
 
 
 # ─── TEST ENDPOINT (NO AUTH REQUIRED) ─────────────────────────────────────────
-@router.post("/test-upload")
+@router.post("/test-upload", openapi_extra={"security": []})
 async def test_upload(file: UploadFile = File(...)):
     """
     TEST ONLY: Upload a file to Cloudinary without authentication.
@@ -108,7 +115,6 @@ async def upload_note(
     db.refresh(note)
 
     # Update score/tier
-    from app.services.scoring_service import update_user_score_and_tier
     update_user_score_and_tier(current_user, db)
 
     # Activity tracking
@@ -235,7 +241,6 @@ def download_note(
     db.add(download)
     db.commit()
 
-    from app.services.scoring_service import update_user_score_and_tier
     update_user_score_and_tier(current_user, db)
 
     # Invalidate note cache
@@ -282,9 +287,14 @@ def rate_note(
         func.count(Rating.id).label("cnt"),
     ).filter(Rating.note_id == note_id).first()
 
-    note.average_rating = float(stats.avg) if stats.avg else None
+    note.average_rating = quantize_decimal(stats.avg) if stats.avg is not None else None
     note.rating_count = stats.cnt or 0
     db.commit()
+
+    try:
+        recalculate_on_rating_change(note.uploader_id, db)
+    except Exception:
+        pass
 
     # Invalidate note cache
     try:
@@ -321,10 +331,14 @@ def approve_note(
     note = db.query(Note).filter(Note.id == note_id).first()
     if not note:
         raise HTTPException(status_code=404, detail="Note not found.")
+    previous_status = note.status
     note.status = "approved"
+    if previous_status != "approved":
+        note.status_updated_at = func.now()
     db.commit()
     db.refresh(note)
     _invalidate_note(note_id)
+    recalculate_on_note_status_change(note.uploader_id, db)
     uploader = db.query(User).filter(User.id == note.uploader_id).first()
     return _note_with_uploader(note, uploader)
 
@@ -340,11 +354,15 @@ def reject_note(
     note = db.query(Note).filter(Note.id == note_id).first()
     if not note:
         raise HTTPException(status_code=404, detail="Note not found.")
+    previous_status = note.status
     note.status = "rejected"
     note.rejection_reason = body.reason
+    if previous_status != "rejected":
+        note.status_updated_at = func.now()
     db.commit()
     db.refresh(note)
     _invalidate_note(note_id)
+    recalculate_on_note_status_change(note.uploader_id, db)
     uploader = db.query(User).filter(User.id == note.uploader_id).first()
     return _note_with_uploader(note, uploader)
 
@@ -359,6 +377,7 @@ async def delete_note(
     note = db.query(Note).filter(Note.id == note_id).first()
     if not note:
         raise HTTPException(status_code=404, detail="Note not found.")
+    uploader_id = note.uploader_id
 
     # Delete from Cloudinary Storage
     try:
@@ -373,6 +392,7 @@ async def delete_note(
     db.delete(note)
     db.commit()
     _invalidate_note(note_id)
+    recalculate_on_note_status_change(uploader_id, db)
 
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────

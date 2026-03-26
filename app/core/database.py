@@ -11,17 +11,27 @@ from typing import Generator
 
 from app.core.config import settings
 
+engine_kwargs = {
+    "pool_pre_ping": True,
+    "echo": False,
+}
+
+if settings.database_url.startswith("sqlite"):
+    engine_kwargs["connect_args"] = {"check_same_thread": False}
+else:
+    engine_kwargs.update(
+        {
+            "pool_size": 10,
+            "max_overflow": 20,
+            "pool_recycle": 3600,
+            "connect_args": {"connect_timeout": 3},
+        }
+    )
+
 # Create SQLAlchemy engine with connection pooling
-# Pool configuration optimized for web application workload
-engine = create_engine(
-    settings.database_url,
-    pool_size=10,  # Number of connections to maintain in the pool
-    max_overflow=20,  # Maximum number of connections that can be created beyond pool_size
-    pool_pre_ping=True,  # Verify connections before using them
-    pool_recycle=3600,  # Recycle connections after 1 hour to prevent stale connections
-    connect_args={"connect_timeout": 3},  # Keep health checks responsive when PostgreSQL is unavailable
-    echo=False,  # Set to True for SQL query logging during development
-)
+# Pool configuration is optimized for PostgreSQL in production and
+# relaxed for SQLite during tests.
+engine = create_engine(settings.database_url, **engine_kwargs)
 
 # Create SessionLocal class for database sessions
 # Each instance of SessionLocal will be a database session

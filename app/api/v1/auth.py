@@ -12,7 +12,7 @@ from pydantic import ValidationError
 from app.core.database import get_db
 from app.core.auth import get_current_user
 from app.models.user import User
-from app.schemas.schemas import UserRegisterRequest, UserUpdateRequest, UserResponse
+from app.schemas.schemas import UserRegisterRequest, UserUpdateRequest, UserProfileResponse, UserResponse
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -21,7 +21,12 @@ PROFILE_CACHE_TTL = 900
 
 
 # ─── TEST ENDPOINT (NO FIREBASE REQUIRED) ────────────────────────────────────
-@router.post("/test-register", response_model=UserResponse, status_code=201)
+@router.post(
+    "/test-register",
+    response_model=UserResponse,
+    status_code=201,
+    openapi_extra={"security": []},
+)
 async def test_register(
     email: str,
     name: str,
@@ -96,7 +101,7 @@ async def register(
     return current_user
 
 
-@router.get("/me", response_model=UserResponse)
+@router.get("/me", response_model=UserProfileResponse)
 async def get_me(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -115,7 +120,7 @@ async def get_me(
     except Exception:
         pass
 
-    result = UserResponse.model_validate(current_user)
+    result = UserProfileResponse.model_validate(current_user)
     try:
         from app.services.redis_service import set_cache
         set_cache(cache_key, result.model_dump(mode="json"), ttl=PROFILE_CACHE_TTL)
@@ -126,7 +131,7 @@ async def get_me(
 
 @router.put(
     "/me",
-    response_model=UserResponse,
+    response_model=UserProfileResponse,
     openapi_extra={
         "requestBody": {
             "required": False,

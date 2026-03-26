@@ -7,9 +7,17 @@ activity feed, AI chatbot, and admin endpoints.
 
 from __future__ import annotations
 from datetime import datetime, date
+from decimal import Decimal, ROUND_HALF_UP
 from typing import Optional, List, Any
 from uuid import UUID
-from pydantic import BaseModel, Field, EmailStr, field_validator
+from pydantic import BaseModel, Field, EmailStr, field_validator, field_serializer
+
+
+DECIMAL_2DP = Decimal("0.01")
+
+
+def _serialize_decimal(value: Decimal) -> float:
+    return float(value.quantize(DECIMAL_2DP, rounding=ROUND_HALF_UP))
 
 
 # ─── User Schemas ──────────────────────────────────────────────────────────────
@@ -34,13 +42,24 @@ class UserResponse(BaseModel):
     avatar_url: Optional[str] = None
     about: Optional[str] = None
     status: str
-    score: int
+    score: Decimal = Field(
+        ...,
+        description="Total score = uploads_count + downloads_count + average_rating",
+    )
+    average_rating: Decimal = Field(
+        default=Decimal("0.00"),
+        description="Cached average rating across the user's approved notes.",
+    )
     tier: str
     uploads_count: int
     downloads_count: int
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+    @field_serializer("score", "average_rating")
+    def serialize_decimal_fields(self, value: Decimal) -> float:
+        return _serialize_decimal(value)
 
 
 class UserPublicResponse(BaseModel):
@@ -49,11 +68,20 @@ class UserPublicResponse(BaseModel):
     role: str
     avatar_url: Optional[str] = None
     tier: str
-    score: int
+    score: Decimal
+    average_rating: Decimal = Decimal("0.00")
     uploads_count: int
     downloads_count: int
 
     model_config = {"from_attributes": True}
+
+    @field_serializer("score", "average_rating")
+    def serialize_decimal_fields(self, value: Decimal) -> float:
+        return _serialize_decimal(value)
+
+
+class UserProfileResponse(UserResponse):
+    """Profile response including score breakdown fields."""
 
 
 # ─── Note Schemas ──────────────────────────────────────────────────────────────
@@ -73,11 +101,17 @@ class NoteResponse(BaseModel):
     status: str
     rejection_reason: Optional[str] = None
     download_count: int
-    average_rating: Optional[float] = None
+    average_rating: Optional[Decimal] = None
     rating_count: int
     upload_date: datetime
 
     model_config = {"from_attributes": True}
+
+    @field_serializer("average_rating")
+    def serialize_average_rating(self, value: Optional[Decimal]) -> Optional[float]:
+        if value is None:
+            return None
+        return _serialize_decimal(value)
 
 
 class NoteListResponse(BaseModel):
@@ -118,10 +152,15 @@ class LeaderboardEntry(BaseModel):
     user_id: UUID
     name: str
     avatar_url: Optional[str] = None
-    score: int
+    score: Decimal
+    average_rating: Decimal = Decimal("0.00")
     tier: str
     uploads_count: int
     downloads_count: int
+
+    @field_serializer("score", "average_rating")
+    def serialize_decimal_fields(self, value: Decimal) -> float:
+        return _serialize_decimal(value)
 
 
 class LeaderboardResponse(BaseModel):
@@ -319,6 +358,39 @@ class AnalyticsResponse(BaseModel):
     trends: dict
     top_subjects: List[SubjectCount]
     complaint_stats: ComplaintStats
+
+
+class NoteRatingBreakdown(BaseModel):
+    note_id: UUID
+    title: str
+    average_rating: Decimal
+    rating_count: int
+
+    @field_serializer("average_rating")
+    def serialize_average_rating(self, value: Decimal) -> float:
+        return _serialize_decimal(value)
+
+
+class ScoreDetailsResponse(BaseModel):
+    user_id: UUID
+    name: str
+    uploads_count: int
+    downloads_count: int
+    average_rating: Decimal = Field(
+        ...,
+        description="Average rating across approved notes with ratings.",
+    )
+    approved_notes_with_ratings_count: int
+    note_ratings: List[NoteRatingBreakdown]
+    score: Decimal = Field(
+        ...,
+        description="Total score = uploads_count + downloads_count + average_rating",
+    )
+    tier: str
+
+    @field_serializer("score", "average_rating")
+    def serialize_decimal_fields(self, value: Decimal) -> float:
+        return _serialize_decimal(value)
 
 
 # ─── AI Chatbot Schemas ────────────────────────────────────────────────────────

@@ -20,7 +20,7 @@ def run():
     if exit_code != 0:
         print("Migration failed.", file=sys.stderr)
         sys.exit(1)
-    print("✓ Migrations complete.")
+    print("[OK] Migrations complete.")
 
 if __name__ == "__main__":
     run()

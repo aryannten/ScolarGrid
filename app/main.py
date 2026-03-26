@@ -67,10 +67,9 @@ app.add_middleware(RateLimiterMiddleware)
 
 # Request logging middleware
 import time
-import logging
+from app.core.logging_config import get_logger
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("scholargrid")
+logger = get_logger(__name__)
 
 
 @app.middleware("http")
@@ -78,9 +77,27 @@ async def log_requests(request: Request, call_next):
     start = time.time()
     response = await call_next(request)
     duration_ms = round((time.time() - start) * 1000, 2)
-    logger.info(
-        f"{request.method} {request.url.path} → {response.status_code} [{duration_ms}ms]"
-    )
+    
+    # Structured logging with extra fields
+    log_message = f"{request.method} {request.url.path} → {response.status_code} [{duration_ms}ms]"
+    
+    # Create log record with extra fields for JSON formatter
+    extra = {
+        "method": request.method,
+        "path": str(request.url.path),
+        "status_code": response.status_code,
+        "duration_ms": duration_ms,
+    }
+    
+    # Add request ID if present
+    if hasattr(request.state, "request_id"):
+        extra["request_id"] = request.state.request_id
+    
+    # Add user ID if present
+    if hasattr(request.state, "user") and hasattr(request.state.user, "id"):
+        extra["user_id"] = str(request.state.user.id)
+    
+    logger.info(log_message, extra=extra)
     return response
 
 
@@ -167,7 +184,15 @@ async def metrics():
 
 @app.on_event("startup")
 async def startup():
-    """Connect Redis, initialize Cloudinary and Firebase on startup."""
+    """Connect Redis, initialize Cloudinary, Firebase, and Sentry on startup."""
+    # Initialize Sentry error tracking
+    try:
+        from app.core.sentry_config import initialize_sentry
+        initialize_sentry()
+        logger.info("Sentry error tracking initialized.")
+    except Exception as e:
+        logger.warning(f"Sentry initialization failed: {e}")
+    
     try:
         from app.services.redis_service import redis_client
         redis_client.connect()

@@ -165,6 +165,10 @@ class Note(Base):
             "status IN ('pending', 'approved', 'rejected')",
             name="check_note_status"
         ),
+        Index("idx_notes_status", "status"),
+        Index("idx_notes_uploader_id", "uploader_id"),
+        Index("idx_notes_average_rating", "average_rating"),
+        Index("idx_notes_uploader_status_rating", "uploader_id", "status", "average_rating"),
     )
     
     def __repr__(self) -> str:

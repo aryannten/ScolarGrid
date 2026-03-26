@@ -1,10 +1,11 @@
 """
-SQLAlchemy ORM model for User entity
+SQLAlchemy ORM model for User entity.
 
 This module defines the User model representing both students and admins.
 """
 
-from sqlalchemy import String, Integer, Text, TIMESTAMP, CheckConstraint, Index
+from decimal import Decimal
+from sqlalchemy import String, Integer, Text, TIMESTAMP, CheckConstraint, Index, DECIMAL
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import UUID
 from datetime import datetime
@@ -26,7 +27,8 @@ class User(Base):
         avatar_url: URL to user's avatar image in Firebase Storage
         about: User bio/description text
         status: Account status (active or suspended)
-        score: Student activity score (uploads_count + downloads_count)
+        average_rating: Cached average rating across approved notes
+        score: Student activity score (uploads_count + downloads_count + average_rating)
         tier: Student tier level (bronze, silver, gold, elite)
         uploads_count: Number of notes uploaded by student
         downloads_count: Number of notes downloaded by student
@@ -90,10 +92,18 @@ class User(Base):
     )
     
     # Student statistics
-    score: Mapped[int] = mapped_column(
-        Integer,
+    average_rating: Mapped[Decimal] = mapped_column(
+        DECIMAL(3, 2),
         nullable=False,
-        default=0,
+        default=Decimal("0.00"),
+        server_default="0.00"
+    )
+
+    score: Mapped[Decimal] = mapped_column(
+        DECIMAL(10, 2),
+        nullable=False,
+        default=Decimal("0.00"),
+        server_default="0.00",
         index=True
     )
     
@@ -143,6 +153,10 @@ class User(Base):
         CheckConstraint(
             "tier IN ('bronze', 'silver', 'gold', 'elite')",
             name="check_user_tier"
+        ),
+        CheckConstraint(
+            "average_rating >= 0 AND average_rating <= 5",
+            name="check_user_average_rating"
         ),
         # Additional indexes for score (descending) and role
         Index("idx_users_score", "score", postgresql_ops={"score": "DESC"}),

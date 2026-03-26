@@ -18,6 +18,15 @@ from app.models.chat import ChatGroup, ChatMembership
 from app.models.complaint import Complaint
 
 
+def _clear_rate_limit_state():
+    try:
+        from app.services.redis_service import invalidate_pattern
+
+        invalidate_pattern("rate_limit:*")
+    except Exception:
+        pass
+
+
 # ─── Database Fixtures ────────────────────────────────────────────────────────
 
 @pytest.fixture(scope="session")
@@ -205,8 +214,10 @@ def client(db_session, student_user):
     app.dependency_overrides[get_current_user] = override_get_current_user
 
     with TestClient(app) as c:
+        _clear_rate_limit_state()
         yield c
 
+    _clear_rate_limit_state()
     app.dependency_overrides.clear()
 
 
@@ -228,6 +239,8 @@ def admin_client(db_session, admin_user):
     app.dependency_overrides[get_current_user] = override_get_current_user
 
     with TestClient(app) as c:
+        _clear_rate_limit_state()
         yield c
 
+    _clear_rate_limit_state()
     app.dependency_overrides.clear()

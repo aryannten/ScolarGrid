@@ -23,11 +23,18 @@ from app.models.complaint import Complaint
 from app.schemas.schemas import (
     UserResponse, PaginatedUsers, NoteResponse, NoteListResponse,
     AnalyticsResponse, AnalyticsTotals, MonthlyCount, SubjectCount, ComplaintStats,
+    ScoreDetailsResponse, NoteRatingBreakdown,
 )
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
 ANALYTICS_TTL = 600  # 10 minutes
+
+
+def _year_month_expression(db: Session, column):
+    if db.bind is not None and db.bind.dialect.name == "sqlite":
+        return func.strftime("%Y-%m", column)
+    return func.to_char(column, "YYYY-MM")
 
 
 # ─── Analytics ────────────────────────────────────────────────────────────────
@@ -62,14 +69,16 @@ def get_analytics(
     # Monthly uploads (last 12 months)
     monthly_uploads = []
     monthly_regs = []
+    note_year_month = _year_month_expression(db, Note.upload_date)
+    user_year_month = _year_month_expression(db, User.created_at)
     for i in range(11, -1, -1):
         dt = datetime.now(timezone.utc) - timedelta(days=30 * i)
         label = dt.strftime("%Y-%m")
         uploads = db.query(Note).filter(
-            func.to_char(Note.upload_date, "YYYY-MM") == label
+            note_year_month == label
         ).count()
         regs = db.query(User).filter(
-            func.to_char(User.created_at, "YYYY-MM") == label
+            user_year_month == label
         ).count()
         monthly_uploads.append(MonthlyCount(month=label, count=uploads))
         monthly_regs.append(MonthlyCount(month=label, count=regs))
@@ -153,6 +162,49 @@ def get_user(
     if not user:
         raise HTTPException(status_code=404, detail="User not found.")
     return user
+
+
+@router.get("/users/{user_id}/score-details", response_model=ScoreDetailsResponse)
+def get_user_score_details(
+    user_id: UUID,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    """Return a detailed score breakdown for a student."""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found.")
+
+    rated_notes = (
+        db.query(Note)
+        .filter(
+            Note.uploader_id == user_id,
+            Note.status == "approved",
+            Note.average_rating.isnot(None),
+        )
+        .order_by(Note.upload_date.desc())
+        .all()
+    )
+
+    return ScoreDetailsResponse(
+        user_id=user.id,
+        name=user.name,
+        uploads_count=user.uploads_count,
+        downloads_count=user.downloads_count,
+        average_rating=user.average_rating,
+        approved_notes_with_ratings_count=len(rated_notes),
+        note_ratings=[
+            NoteRatingBreakdown(
+                note_id=note.id,
+                title=note.title,
+                average_rating=note.average_rating,
+                rating_count=note.rating_count,
+            )
+            for note in rated_notes
+        ],
+        score=user.score,
+        tier=user.tier,
+    )
 
 
 @router.put("/users/{user_id}/suspend", response_model=UserResponse)

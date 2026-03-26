@@ -39,9 +39,9 @@ def seed_admin():
             if existing.role != "admin":
                 existing.role = "admin"
                 db.commit()
-                print(f"✓ Existing user '{email}' promoted to admin.")
+                print(f"[OK] Existing user '{email}' promoted to admin.")
             else:
-                print(f"✓ Admin user '{email}' already exists. No changes made.")
+                print(f"[OK] Admin user '{email}' already exists. No changes made.")
             return
 
         admin = User(
@@ -57,7 +57,7 @@ def seed_admin():
         )
         db.add(admin)
         db.commit()
-        print(f"✓ Admin user '{email}' created successfully (id={admin.id}).")
+        print(f"[OK] Admin user '{email}' created successfully (id={admin.id}).")
     finally:
         db.close()
 

@@ -3,9 +3,10 @@ Leaderboard routes for ScholarGrid Backend API
 """
 
 import math
+from typing import Optional
+
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import func
 
 from app.core.database import get_db
 from app.core.auth import get_current_user
@@ -21,11 +22,13 @@ LEADERBOARD_TTL = 300  # 5 minutes
 def get_leaderboard(
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
+    tier: Optional[str] = Query(None),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Get ranked students by score (descending). Ties broken by earliest created_at."""
-    cache_key = f"leaderboard:page:{page}:size:{page_size}"
+    tier_scope = tier or "all"
+    cache_key = f"leaderboard:tier:{tier_scope}:page:{page}:size:{page_size}"
     try:
         from app.services.redis_service import get_cache, set_cache
         cached = get_cache(cache_key)
@@ -34,7 +37,11 @@ def get_leaderboard(
     except Exception:
         pass
 
-    query = db.query(User).filter(User.role == "student").order_by(
+    query = db.query(User).filter(User.role == "student")
+    if tier:
+        query = query.filter(User.tier == tier)
+
+    query = query.order_by(
         User.score.desc(), User.created_at.asc()
     )
     total = query.count()
@@ -48,6 +55,7 @@ def get_leaderboard(
             name=u.name,
             avatar_url=u.avatar_url,
             score=u.score,
+            average_rating=u.average_rating,
             tier=u.tier,
             uploads_count=u.uploads_count,
             downloads_count=u.downloads_count,
