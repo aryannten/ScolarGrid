@@ -44,7 +44,7 @@ class Settings(BaseSettings):
     gemini_api_key: str = ""
     
     # CORS
-    cors_origins: str = "http://localhost:3000,http://localhost:5173"
+    cors_origins: str = "http://localhost:3000,http://localhost:5173,http://localhost:5174"
     
     # Rate Limiting
     rate_limit: int = 100

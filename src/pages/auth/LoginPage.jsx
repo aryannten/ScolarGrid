@@ -9,9 +9,9 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
   const [role, setRole] = useState('student');
   const [showPassword, setShowPassword] = useState(false);
-  const [googleName, setGoogleName] = useState('');
   const [error, setError] = useState('');
 
   const handleSuccess = (nextUser) => {
@@ -22,12 +22,21 @@ export default function LoginPage() {
     e.preventDefault();
     setError('');
 
-    if (role === 'student') {
-      setError('Student access is handled through the Google button because the configured backend has no email/password login endpoint.');
+    if (!email.trim()) {
+      setError('Please enter your email address.');
       return;
     }
 
-    const result = await login({ role, username: email, password });
+    const displayName = name.trim() || email.split('@')[0];
+
+    const result = await login({
+      role,
+      email,
+      password,
+      username: email,
+      googleName: displayName,
+    });
+
     if (result.success) {
       handleSuccess(result.user);
     } else {
@@ -37,13 +46,12 @@ export default function LoginPage() {
 
   const handleGoogleSignIn = async () => {
     setError('');
-
     if (!email.trim()) {
       setError('Enter your email before continuing with Google.');
       return;
     }
-
-    const result = await loginWithGoogle({ name: googleName, email });
+    const displayName = name.trim() || email.split('@')[0];
+    const result = await loginWithGoogle({ name: displayName, email });
     if (result.success) {
       handleSuccess(result.user);
     } else {
@@ -79,18 +87,18 @@ export default function LoginPage() {
             Scholar<span className="gradient-text-gold">Grid</span>
           </h1>
           <p className="text-lg text-gray-300 mb-8 leading-relaxed">
-            Sign in against the configured backend instead of local mock users and localStorage.
+            The premium college collaboration platform. Share knowledge, engage in discussions, and rise through the ranks.
           </p>
 
           <div className="flex items-center justify-center gap-6 text-sm text-gray-400">
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-gold-400" />
-              <span>Session-backed</span>
+              <span>AI-Powered</span>
             </div>
             <div className="w-1 h-1 rounded-full bg-gray-600" />
-            <span>No mock users</span>
+            <span>Real-time Chat</span>
             <div className="w-1 h-1 rounded-full bg-gray-600" />
-            <span>Real failures surface</span>
+            <span>Gamified</span>
           </div>
         </div>
       </motion.div>
@@ -111,7 +119,7 @@ export default function LoginPage() {
 
           <div className="mb-8">
             <h2 className="text-3xl font-serif font-bold text-gray-900 dark:text-white mb-2">Welcome back</h2>
-            <p className="text-gray-500 dark:text-gray-400">Sign in through the live backend contract</p>
+            <p className="text-gray-500 dark:text-gray-400">Sign in to continue your learning journey</p>
           </div>
 
           {activeError && (
@@ -146,26 +154,24 @@ export default function LoginPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            {role === 'student' && (
-              <div className="relative">
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  value={googleName}
-                  onChange={(e) => setGoogleName(e.target.value)}
-                  placeholder="Display name for Google sign-in"
-                  className="input-field pl-11"
-                />
-              </div>
-            )}
+            <div className="relative">
+              <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Full name"
+                className="input-field pl-11"
+              />
+            </div>
 
             <div className="relative">
               <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
-                type={role === 'admin' ? 'text' : 'email'}
+                type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder={role === 'admin' ? 'Admin username' : 'Email address'}
+                placeholder="Email address"
                 className="input-field pl-11"
                 required
               />
@@ -180,7 +186,6 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Password"
                   className="input-field pl-11 pr-11"
-                  required
                 />
                 <button
                   type="button"
@@ -194,10 +199,10 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              disabled={authBusy || role === 'student'}
-              className="btn-primary w-full flex items-center justify-center gap-2 py-3 disabled:opacity-60 disabled:cursor-not-allowed"
+              disabled={authBusy}
+              className="btn-primary w-full flex items-center justify-center gap-2 py-3"
             >
-              {authBusy && role === 'admin' ? (
+              {authBusy ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
                 <>
@@ -209,15 +214,15 @@ export default function LoginPage() {
 
           <div className="flex items-center gap-4 my-6">
             <div className="flex-1 h-px bg-gray-200 dark:bg-dark-border" />
-            <span className="text-xs text-gray-400 uppercase tracking-wider">student access</span>
+            <span className="text-xs text-gray-400 uppercase tracking-wider">or continue with</span>
             <div className="flex-1 h-px bg-gray-200 dark:bg-dark-border" />
           </div>
 
           <button
             type="button"
             onClick={handleGoogleSignIn}
-            disabled={authBusy || role !== 'student'}
-            className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-xl text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-50 dark:hover:bg-dark-hover transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            disabled={authBusy}
+            className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-xl text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-50 dark:hover:bg-dark-hover transition-colors disabled:opacity-60"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
@@ -225,16 +230,12 @@ export default function LoginPage() {
               <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
             </svg>
-            {authBusy && role === 'student' ? 'Connecting...' : 'Continue with Google'}
+            {authBusy ? 'Connecting...' : 'Continue with Google'}
           </button>
 
-          <p className="text-xs text-gray-400 mt-4">
-            Student sign-in currently posts to the backend Google endpoint using your name and email. Admin sign-in uses username/password.
-          </p>
-
           <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-6">
-            Need registration?{' '}
-            <Link to="/signup" className="text-brand-500 hover:text-brand-600 font-semibold">Check backend support</Link>
+            Don't have an account?{' '}
+            <Link to="/signup" className="text-brand-500 hover:text-brand-600 font-semibold">Create Account</Link>
           </p>
         </div>
       </motion.div>

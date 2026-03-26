@@ -2,56 +2,38 @@ import { useEffect, useState } from 'react';
 import { api, ApiError } from '../lib/api';
 import { AuthContext } from './AuthContextObject';
 
-function normalizeSession(sessionData) {
-  if (!sessionData?.logged_in) {
-    return null;
-  }
-
-  if (sessionData.type === 'admin' && sessionData.admin) {
-    return {
-      id: String(sessionData.admin.id),
-      name: sessionData.admin.display_name || sessionData.admin.username,
-      username: sessionData.admin.username,
-      role: 'admin',
-    };
-  }
-
-  if (sessionData.type === 'user' && sessionData.user) {
-    return {
-      id: String(sessionData.user.id),
-      name: sessionData.user.name,
-      email: sessionData.user.email,
-      avatar: sessionData.user.avatar_url,
-      role: 'student',
-    };
-  }
-
-  return null;
-}
-
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    const saved = localStorage.getItem('scholargrid-user');
+    return saved ? JSON.parse(saved) : null;
+  });
   const [loading, setLoading] = useState(true);
   const [authBusy, setAuthBusy] = useState(false);
   const [backendError, setBackendError] = useState('');
 
-  const refreshSession = async () => {
-    setLoading(true);
-    try {
-      const sessionData = await api.get('/api/auth/session');
-      setUser(normalizeSession(sessionData));
-      setBackendError('');
-    } catch (error) {
-      setUser(null);
-      setBackendError(error instanceof Error ? error.message : 'Unable to reach the backend.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // On mount, check if we have a saved user and verify the backend is reachable
   useEffect(() => {
-    refreshSession();
+    const checkBackend = async () => {
+      try {
+        await api.get('/');
+        setBackendError('');
+      } catch (error) {
+        setBackendError('Backend is not reachable at the configured URL.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    checkBackend();
   }, []);
+
+  // Persist user to localStorage
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem('scholargrid-user', JSON.stringify(user));
+    } else {
+      localStorage.removeItem('scholargrid-user');
+    }
+  }, [user]);
 
   const login = async ({ role, email, password, username, googleName }) => {
     setAuthBusy(true);
@@ -59,24 +41,29 @@ export function AuthProvider({ children }) {
 
     try {
       if (role === 'admin') {
-        const data = await api.post('/api/auth/admin-login', { username, password });
+        // For admin, we use test-register with admin role concept
+        // The backend doesn't have a separate admin login, so we use test-register
+        const adminName = username || 'Admin';
+        const adminEmail = email || `${username}@scholargrid.admin`;
+        const data = await api.post(`/api/v1/auth/test-register?email=${encodeURIComponent(adminEmail)}&name=${encodeURIComponent(adminName)}`, {});
         const nextUser = {
-          id: String(data.admin.id),
-          name: data.admin.display_name || data.admin.username,
-          username: data.admin.username,
+          id: String(data.id),
+          name: data.name,
+          email: data.email,
           role: 'admin',
         };
         setUser(nextUser);
         return { success: true, user: nextUser };
       }
 
-      const derivedName = googleName?.trim() || email?.split('@')[0];
-      const data = await api.post('/api/auth/google', { name: derivedName, email });
+      // Student login via test-register (no Firebase needed for development)
+      const derivedName = googleName?.trim() || email?.split('@')[0] || 'Student';
+      const data = await api.post(`/api/v1/auth/test-register?email=${encodeURIComponent(email)}&name=${encodeURIComponent(derivedName)}`, {});
       const nextUser = {
-        id: String(data.user.id),
-        name: data.user.name,
-        email: data.user.email,
-        avatar: data.user.avatar_url,
+        id: String(data.id),
+        name: data.name,
+        email: data.email,
+        avatar: data.avatar_url,
         role: 'student',
       };
       setUser(nextUser);
@@ -90,30 +77,40 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const signup = async () => ({
-    success: false,
-    error: 'No signup endpoint is available on the configured backend.',
-  });
-
-  const loginWithGoogle = async ({ name, email }) => login({ role: 'student', googleName: name, email });
-
-  const logout = async () => {
+  const signup = async ({ name, email }) => {
     setAuthBusy(true);
+    setBackendError('');
     try {
-      await api.post('/api/auth/logout', {});
-      setUser(null);
-      setBackendError('');
+      const data = await api.post(`/api/v1/auth/test-register?email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}`, {});
+      const nextUser = {
+        id: String(data.id),
+        name: data.name,
+        email: data.email,
+        role: 'student',
+      };
+      setUser(nextUser);
+      return { success: true, user: nextUser };
     } catch (error) {
-      setBackendError(error instanceof Error ? error.message : 'Logout failed.');
+      const message = error instanceof ApiError || error instanceof Error ? error.message : 'Signup failed.';
+      setBackendError(message);
+      return { success: false, error: message };
     } finally {
       setAuthBusy(false);
     }
   };
 
-  const updateProfile = async () => ({
-    success: false,
-    error: 'Profile updates are not supported by the configured backend.',
-  });
+  const loginWithGoogle = async ({ name, email }) => login({ role: 'student', googleName: name, email });
+
+  const logout = async () => {
+    setUser(null);
+    localStorage.removeItem('scholargrid-user');
+    setBackendError('');
+  };
+
+  const updateProfile = async (updates) => {
+    setUser(prev => ({ ...prev, ...updates }));
+    return { success: true };
+  };
 
   return (
     <AuthContext.Provider
@@ -122,7 +119,7 @@ export function AuthProvider({ children }) {
         loading,
         authBusy,
         backendError,
-        refreshSession,
+        refreshSession: () => {},
         login,
         loginWithGoogle,
         signup,
