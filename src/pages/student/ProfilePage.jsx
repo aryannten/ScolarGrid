@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-import { User, Mail, Edit3, Save, Sun, Moon, Upload, Star, FileText, Download, Calendar, Award } from 'lucide-react';
+import { Mail, Edit3, Save, Sun, Moon, Upload, Star, Download, Calendar, Award } from 'lucide-react';
+import PageMessage from '../../components/feedback/PageMessage';
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.06 } } };
 const item = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } };
@@ -12,9 +13,11 @@ export default function ProfilePage() {
   const { isDark, toggleTheme } = useTheme();
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({ name: user?.name || '', about: user?.about || '' });
+  const [profileMessage, setProfileMessage] = useState('');
 
-  const handleSave = () => {
-    updateProfile(form);
+  const handleSave = async () => {
+    const result = await updateProfile(form);
+    setProfileMessage(result.error);
     setEditing(false);
   };
 
@@ -28,6 +31,15 @@ export default function ProfilePage() {
   return (
     <motion.div variants={container} initial="hidden" animate="show" className="max-w-3xl mx-auto space-y-6">
       <motion.div variants={item}><h1 className="page-title">Profile</h1><p className="page-subtitle">Manage your account</p></motion.div>
+
+      {profileMessage && (
+        <PageMessage
+          eyebrow="Read only"
+          title="Profile editing is not available yet"
+          description={profileMessage}
+          tone="warning"
+        />
+      )}
 
       {/* Profile Card */}
       <motion.div variants={item} className="glass-card p-6">
@@ -52,8 +64,8 @@ export default function ProfilePage() {
                 <p className="text-sm text-gray-600 dark:text-gray-300 mt-2">{user?.about || 'No bio set'}</p>
                 <div className="flex items-center gap-3 mt-3">
                   <span className="badge-purple">{user?.role}</span>
-                  <span className="badge-gold">{user?.tier || 'Bronze'}</span>
-                  <span className="text-xs text-gray-400 flex items-center gap-1"><Calendar className="w-3 h-3" /> Joined {user?.joinedAt}</span>
+                  <span className="badge-gold">{user?.tier || 'Pending'}</span>
+                  <span className="text-xs text-gray-400 flex items-center gap-1"><Calendar className="w-3 h-3" /> Joined via backend session</span>
                 </div>
                 <button onClick={() => setEditing(true)} className="btn-ghost text-sm mt-3 flex items-center gap-1"><Edit3 className="w-3.5 h-3.5" /> Edit Profile</button>
               </>

@@ -1,20 +1,19 @@
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
-import { NOTES, ACTIVITY_FEED, LEADERBOARD } from '../../data/mockData';
-import { FileText, Download, Star, Trophy, Upload, MessageSquare, ArrowUpRight, TrendingUp, Zap } from 'lucide-react';
+import { FileText, Download, Star, Trophy, Upload, MessageSquare, ArrowUpRight, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import PageMessage from '../../components/feedback/PageMessage';
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.08 } } };
 const item = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } };
 
 export default function StudentDashboard() {
   const { user } = useAuth();
-
   const stats = [
-    { label: 'Notes Uploaded', value: user?.uploads || 23, icon: Upload, color: 'text-brand-500', bg: 'bg-brand-50 dark:bg-brand-900/20' },
-    { label: 'Total Downloads', value: user?.downloads || 156, icon: Download, color: 'text-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
-    { label: 'Current Rating', value: '4.7', icon: Star, color: 'text-gold-500', bg: 'bg-gold-50 dark:bg-gold-900/20' },
-    { label: 'Leaderboard Rank', value: `#${LEADERBOARD.findIndex(u => u.id === user?.id) + 1 || 2}`, icon: Trophy, color: 'text-purple-500', bg: 'bg-purple-50 dark:bg-purple-900/20' },
+    { label: 'Auth Mode', value: 'Live', icon: Upload, color: 'text-brand-500', bg: 'bg-brand-50 dark:bg-brand-900/20' },
+    { label: 'Backend User ID', value: user?.id || 'N/A', icon: Download, color: 'text-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
+    { label: 'Role', value: user?.role || 'guest', icon: Star, color: 'text-gold-500', bg: 'bg-gold-50 dark:bg-gold-900/20' },
+    { label: 'Data Status', value: 'Pending', icon: Trophy, color: 'text-purple-500', bg: 'bg-purple-50 dark:bg-purple-900/20' },
   ];
 
   return (
@@ -26,10 +25,10 @@ export default function StudentDashboard() {
         <div className="relative z-10">
           <p className="text-brand-200 text-sm font-medium mb-1">Welcome back,</p>
           <h1 className="text-2xl lg:text-3xl font-serif font-bold text-white mb-2">{user?.name || 'Scholar'} ✨</h1>
-          <p className="text-brand-200 text-sm max-w-lg">Continue your learning journey. You've made great progress this week!</p>
+          <p className="text-brand-200 text-sm max-w-lg">Your session is now loaded from the backend. The rest of the student features need matching ScholarGrid APIs before this dashboard can surface live notes, rank, and activity.</p>
           <div className="flex gap-3 mt-5">
             <Link to="/notes" className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-sm font-medium backdrop-blur-sm transition-colors border border-white/10">
-              <Upload className="w-4 h-4" /> Upload Notes
+              <Upload className="w-4 h-4" /> Check Notes Wiring
             </Link>
             <Link to="/chat" className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-sm font-medium backdrop-blur-sm transition-colors border border-white/10">
               <MessageSquare className="w-4 h-4" /> Join Chat
@@ -55,40 +54,24 @@ export default function StudentDashboard() {
         ))}
       </motion.div>
 
-      {/* Two Column Layout */}
+      <PageMessage
+        eyebrow="Next integration step"
+        title="Feature data has been disconnected from mock fixtures"
+        description="Dashboard cards still render, but the app no longer injects fake notes, leaderboard ranks, or activity feed items. Add real notes, leaderboard, and activity endpoints to bring this screen back to full functionality."
+        tone="warning"
+      />
+
       <div className="grid lg:grid-cols-3 gap-6">
-        {/* Recent Activity */}
         <motion.div variants={item} className="lg:col-span-2 glass-card p-6">
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-lg font-serif font-bold text-gray-900 dark:text-white">Recent Activity</h2>
             <Zap className="w-5 h-5 text-gold-500" />
           </div>
-          <div className="space-y-4">
-            {ACTIVITY_FEED.slice(0, 5).map((activity) => (
-              <div key={activity.id} className="flex items-start gap-3 group">
-                <div className="w-8 h-8 rounded-full bg-brand-50 dark:bg-brand-900/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  {activity.type === 'upload' && <Upload className="w-4 h-4 text-brand-500" />}
-                  {activity.type === 'rating' && <Star className="w-4 h-4 text-gold-500" />}
-                  {activity.type === 'join' && <MessageSquare className="w-4 h-4 text-emerald-500" />}
-                  {activity.type === 'complaint' && <FileText className="w-4 h-4 text-orange-500" />}
-                  {activity.type === 'download' && <Download className="w-4 h-4 text-blue-500" />}
-                  {activity.type === 'resolve' && <TrendingUp className="w-4 h-4 text-emerald-500" />}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-gray-700 dark:text-gray-300">
-                    <span className="font-semibold">{activity.user}</span>{' '}
-                    {activity.action}{' '}
-                    <span className="font-medium text-brand-600 dark:text-brand-400">{activity.target}</span>
-                    {activity.detail && <span className="text-gold-500 ml-1">({activity.detail})</span>}
-                  </p>
-                  <p className="text-xs text-gray-400 mt-0.5">{activity.time}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            No live activity endpoint is configured for ScholarGrid yet.
+          </p>
         </motion.div>
 
-        {/* Top Notes */}
         <motion.div variants={item} className="glass-card p-6">
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-lg font-serif font-bold text-gray-900 dark:text-white">Trending Notes</h2>
@@ -96,21 +79,9 @@ export default function StudentDashboard() {
               View All <ArrowUpRight className="w-3 h-3" />
             </Link>
           </div>
-          <div className="space-y-3">
-            {NOTES.sort((a, b) => b.downloads - a.downloads).slice(0, 4).map((note, i) => (
-              <div key={note.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-dark-hover transition-colors cursor-pointer group">
-                <span className="text-lg font-bold text-gray-300 dark:text-gray-600 w-6">{i + 1}</span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">{note.title}</p>
-                  <div className="flex items-center gap-2 text-xs text-gray-400 mt-0.5">
-                    <span className="flex items-center gap-1"><Star className="w-3 h-3 text-gold-400" />{note.rating}</span>
-                    <span>·</span>
-                    <span>{note.downloads} downloads</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Notes are no longer read from local demo fixtures.
+          </p>
         </motion.div>
       </div>
 

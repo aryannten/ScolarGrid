@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ProtectedRoute } from './ProtectedRoute';
+import LoadingScreen from '../components/feedback/LoadingScreen';
 
 // Layouts
 import StudentLayout from '../components/layout/StudentLayout';
@@ -27,7 +28,11 @@ import ComplaintsPage from '../pages/admin/ComplaintsPage';
 import AnalyticsPage from '../pages/admin/AnalyticsPage';
 
 export default function AppRouter() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return <LoadingScreen label="Loading ScholarGrid..." />;
+  }
 
   return (
     <BrowserRouter>
