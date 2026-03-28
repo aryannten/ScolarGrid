@@ -11,6 +11,7 @@ from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -165,3 +166,52 @@ def get_messages(
         ))
 
     return MessageListResponse(messages=messages, total=total, page=page, page_size=page_size)
+
+class SendMessageRequest(BaseModel):
+    content: str
+
+@router.post("/groups/{group_id}/messages", response_model=MessageResponse, status_code=201)
+def send_message(
+    group_id: UUID,
+    body: SendMessageRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Send a new text message to a chat group."""
+    group = db.query(ChatGroup).filter(ChatGroup.id == group_id).first()
+    if not group:
+        raise HTTPException(status_code=404, detail="Group not found.")
+
+    membership = db.query(ChatMembership).filter(
+        ChatMembership.group_id == group_id,
+        ChatMembership.user_id == current_user.id,
+    ).first()
+    if not membership:
+        raise HTTPException(status_code=403, detail="You are not a member of this group.")
+
+    msg = Message(
+        group_id=group_id,
+        sender_id=current_user.id,
+        content=body.content,
+        type="text",
+    )
+    db.add(msg)
+    
+    # Update group last message
+    group.last_message = body.content[:100]
+    import datetime
+    group.last_message_at = datetime.datetime.utcnow()
+    
+    db.commit()
+    db.refresh(msg)
+    
+    return MessageResponse(
+        id=msg.id,
+        sender_id=msg.sender_id,
+        sender_name=current_user.name,
+        sender_avatar=current_user.avatar_url,
+        content=msg.content,
+        type=msg.type,
+        file_url=msg.file_url,
+        created_at=msg.created_at,
+    )

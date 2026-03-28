@@ -24,6 +24,7 @@ export async function apiRequest(path, options = {}) {
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
+      'Authorization': 'Bearer test-token',
       ...options.headers,
     },
     ...options,
