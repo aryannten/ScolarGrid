@@ -4,15 +4,20 @@ Authentication and user profile routes for ScholarGrid Backend API
 Handles user registration, profile retrieval, and profile updates.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.exceptions import RequestValidationError
 from sqlalchemy.orm import Session
-from pydantic import ValidationError
+from pydantic import ValidationError, BaseModel
+import uuid
 
 from app.core.database import get_db
 from app.core.auth import get_current_user
 from app.models.user import User
 from app.schemas.schemas import UserRegisterRequest, UserUpdateRequest, UserProfileResponse, UserResponse
+from app.core.session import (
+    create_session, get_session_user, set_session_cookie, 
+    clear_session_cookie, delete_session
+)
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -196,12 +201,6 @@ async def update_me(
 
 # ─── SESSION-BASED AUTH ENDPOINTS ────────────────────────────────────────────
 
-from pydantic import BaseModel
-from app.core.session import (
-    create_session, get_session_user, set_session_cookie, 
-    clear_session_cookie
-)
-
 
 class AdminLoginRequest(BaseModel):
     username: str
@@ -356,7 +355,6 @@ async def logout(
     """
     session_id = request.cookies.get("scholargrid_session")
     if session_id:
-        from app.core.session import delete_session
         delete_session(session_id)
     
     clear_session_cookie(response)
