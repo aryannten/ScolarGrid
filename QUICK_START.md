@@ -1,96 +1,150 @@
 # Quick Start Guide - Integration Branch
 
+## What's Been Done
+
+✅ Session-based authentication implemented
+✅ 4 new authentication endpoints added
+✅ Frontend-compatible API routes configured
+✅ CORS configured for local development
+✅ ThemeContext added to frontend
+
 ## Prerequisites
-- Python 3.10+
+- Python 3.11+
 - Node.js 18+
-- PostgreSQL running
-- Redis running (optional, will warn if not available)
+- PostgreSQL running on localhost:5432
+- Redis running on localhost:6379 (optional for development)
 
-## Backend Setup
+## Quick Test (Recommended)
 
-1. **Install Python dependencies:**
+Run the automated integration test to verify everything works:
+
 ```bash
+# Make sure backend is running first (see below)
+python test_integration.py
+```
+
+This will test all authentication endpoints and verify the integration.
+
+## Manual Setup
+
+### 1. Start the Backend (Port 5000)
+
+```bash
+# Make sure you're on the integration branch
+git checkout integration
+
+# Install dependencies (if not already installed)
 pip install -e .
-```
 
-2. **Set up environment variables:**
-```bash
-cp .env.example .env
-# Edit .env with your database credentials
-```
-
-3. **Run database migrations:**
-```bash
-alembic upgrade head
-```
-
-4. **Start backend server:**
-```bash
-python -m uvicorn app.main:app --reload --port 5000
+# Run the backend on port 5000 (to match frontend config)
+uvicorn app.main:app --host 0.0.0.0 --port 5000 --reload
 ```
 
 Backend will be available at: http://localhost:5000
 
-## Frontend Setup
+**Important**: The backend MUST run on port 5000 (not 8000) to match the frontend configuration.
 
-1. **Install Node dependencies:**
+### 2. Start the Frontend (Port 5173)
+
+Open a new terminal:
+
 ```bash
+# Install frontend dependencies (if not already installed)
 npm install
-```
 
-2. **Start frontend dev server:**
-```bash
+# Start the frontend dev server
 npm run dev
 ```
 
 Frontend will be available at: http://localhost:5173
 
-## Test the Integration
+### 3. Test in Browser
 
-### Admin Login
-1. Go to http://localhost:5173/login
-2. Click "Admin" tab
-3. Username: `admin`
-4. Password: `admin123`
-5. Click "Sign In"
-6. You should be redirected to admin dashboard
+1. Open http://localhost:5173
+2. Try admin login:
+   - Username: `admin`
+   - Password: `admin123`
+3. Try student login:
+   - Use any name and email (no real Google auth required)
+   - Example: Name: "John Doe", Email: "john@example.com"
+4. Test logout
+5. Refresh the page to verify session persistence
 
-### Student Login
-1. Go to http://localhost:5173/login
-2. Click "Student" tab
-3. Enter any name (e.g., "John Doe")
-4. Enter any email (e.g., "john@example.com")
-5. Click "Continue with Google"
-6. You should be redirected to student dashboard
+## New Authentication Endpoints
 
-## Verify It's Working
+1. **GET /api/auth/session** - Check current session status
+2. **POST /api/auth/admin-login** - Admin login (username/password)
+3. **POST /api/auth/google** - Student Google login (name/email)
+4. **POST /api/auth/logout** - Clear session and logout
 
-✅ No 404 errors on login
-✅ Session persists on page refresh
-✅ Logout works
-✅ Protected routes are accessible after login
-✅ Backend logs show successful authentication
-
-## Troubleshooting
-
-### Backend won't start
-- Check PostgreSQL is running
-- Verify DATABASE_URL in .env
-- Run migrations: `alembic upgrade head`
-
-### Frontend won't start
-- Delete node_modules and reinstall: `rm -rf node_modules && npm install`
-- Check port 5173 is not in use
-
-### Login fails with 404
-- Verify backend is running on port 5000
-- Check VITE_API_BASE_URL in frontend .env
-
-### CORS errors
-- Verify CORS_ORIGINS in backend .env includes http://localhost:5173
+All endpoints support both `/api/auth/*` and `/api/v1/auth/*` for backward compatibility.
 
 ## API Documentation
 
-Once backend is running, visit:
-- Swagger UI: http://localhost:5000/docs
-- ReDoc: http://localhost:5000/redoc
+Full API documentation is available at:
+- http://localhost:5000/docs (Swagger UI)
+- http://localhost:5000/redoc (ReDoc)
+
+## Session Management
+
+- Sessions are stored in-memory (development only)
+- Session cookies are HTTP-only and secure
+- Sessions expire after 7 days
+- For production, implement Redis-based session storage
+
+## Troubleshooting
+
+### Backend not accessible from frontend
+
+**Problem**: Frontend shows "Unable to reach the backend"
+
+**Solution**: Make sure the backend is running on port 5000:
+```bash
+uvicorn app.main:app --host 0.0.0.0 --port 5000 --reload
+```
+
+### CORS Errors
+
+**Problem**: Browser console shows CORS errors
+
+**Solution**: Make sure the backend `.env` file has:
+```
+CORS_ORIGINS=http://localhost:3000,http://localhost:5173
+```
+
+### Import Errors in Frontend
+
+**Problem**: "Failed to resolve import" errors
+
+**Solution**: Install frontend dependencies:
+```bash
+npm install
+```
+
+### Database Connection Errors
+
+**Problem**: Backend fails to start with database errors
+
+**Solution**: 
+1. Make sure PostgreSQL is running
+2. Check the `DATABASE_URL` in `.env` file
+3. Run migrations: `python scripts/run_migrations.py`
+
+## Files Modified
+
+- `app/core/session.py` - Session management system (NEW)
+- `app/api/v1/auth.py` - New authentication endpoints
+- `app/main.py` - Route aliases for frontend compatibility
+- `src/context/ThemeContext.jsx` - Added missing context file (NEW)
+
+## Next Steps
+
+1. ✅ Test all authentication flows
+2. Test other features (notes, chat, leaderboard, etc.)
+3. Implement Redis-based session storage for production
+4. Add comprehensive error handling
+5. Write unit tests for new endpoints
+
+## Need Help?
+
+See `TESTING_GUIDE.md` for detailed testing instructions and troubleshooting.
