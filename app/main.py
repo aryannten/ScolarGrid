@@ -128,6 +128,9 @@ app.include_router(admin.router, prefix=API_PREFIX)
 app.include_router(ai_chatbot.router, prefix=API_PREFIX)
 app.include_router(activity.router, prefix=API_PREFIX)
 
+# Add backward-compatible routes for frontend (without /v1)
+app.include_router(auth.router, prefix="/api")
+
 
 # ─── Socket.io ────────────────────────────────────────────────────────────────
 

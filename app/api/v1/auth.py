@@ -192,3 +192,172 @@ async def update_me(
         pass
 
     return current_user
+
+
+# ─── SESSION-BASED AUTH ENDPOINTS ────────────────────────────────────────────
+
+from pydantic import BaseModel
+from app.core.session import (
+    create_session, get_session_user, set_session_cookie, 
+    clear_session_cookie
+)
+
+
+class AdminLoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+class GoogleAuthRequest(BaseModel):
+    name: str
+    email: str
+
+
+class SessionResponse(BaseModel):
+    logged_in: bool
+    type: str | None = None
+    user: dict | None = None
+    admin: dict | None = None
+
+
+@router.get("/session", response_model=SessionResponse, openapi_extra={"security": []})
+async def get_session(
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """
+    Check current session status.
+    Returns user data if logged in, otherwise returns logged_in: false.
+    """
+    user = get_session_user(request, db)
+    
+    if not user:
+        return SessionResponse(logged_in=False)
+    
+    if user.role == "admin":
+        return SessionResponse(
+            logged_in=True,
+            type="admin",
+            admin={
+                "id": str(user.id),
+                "username": user.email.split("@")[0],
+                "display_name": user.name,
+            }
+        )
+    
+    return SessionResponse(
+        logged_in=True,
+        type="user",
+        user={
+            "id": str(user.id),
+            "name": user.name,
+            "email": user.email,
+            "avatar_url": user.avatar_url,
+        }
+    )
+
+
+@router.post("/admin-login", openapi_extra={"security": []})
+async def admin_login(
+    body: AdminLoginRequest,
+    response: Response,
+    db: Session = Depends(get_db),
+):
+    """
+    Admin login with username and password.
+    For development: accepts any username with password 'admin123'
+    """
+    # Simple password check (replace with proper auth in production)
+    if body.password != "admin123":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid credentials"
+        )
+    
+    # Find or create admin user
+    user = db.query(User).filter(
+        User.email == f"{body.username}@admin.local",
+        User.role == "admin"
+    ).first()
+    
+    if not user:
+        # Create admin user
+        user = User(
+            firebase_uid=f"admin-{uuid.uuid4()}",
+            email=f"{body.username}@admin.local",
+            name=body.username,
+            role="admin",
+            status="active",
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    
+    # Create session
+    session_id = create_session(str(user.id), "admin")
+    set_session_cookie(response, session_id)
+    
+    return {
+        "admin": {
+            "id": str(user.id),
+            "username": body.username,
+            "display_name": user.name,
+        }
+    }
+
+
+@router.post("/google", openapi_extra={"security": []})
+async def google_auth(
+    body: GoogleAuthRequest,
+    response: Response,
+    db: Session = Depends(get_db),
+):
+    """
+    Google authentication for students.
+    Creates or retrieves user by email.
+    """
+    # Find or create student user
+    user = db.query(User).filter(User.email == body.email).first()
+    
+    if not user:
+        # Create student user
+        user = User(
+            firebase_uid=f"google-{uuid.uuid4()}",
+            email=body.email,
+            name=body.name,
+            role="student",
+            status="active",
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    
+    # Create session
+    session_id = create_session(str(user.id), "student")
+    set_session_cookie(response, session_id)
+    
+    return {
+        "user": {
+            "id": str(user.id),
+            "name": user.name,
+            "email": user.email,
+            "avatar_url": user.avatar_url,
+        }
+    }
+
+
+@router.post("/logout", openapi_extra={"security": []})
+async def logout(
+    request: Request,
+    response: Response,
+):
+    """
+    Logout and clear session.
+    """
+    session_id = request.cookies.get("scholargrid_session")
+    if session_id:
+        from app.core.session import delete_session
+        delete_session(session_id)
+    
+    clear_session_cookie(response)
+    return {"message": "Logged out successfully"}
