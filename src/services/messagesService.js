@@ -1,116 +1,62 @@
-import { supabase } from '../lib/supabaseClient';
+import { apiGet, apiPost } from '../lib/apiClient';
 
 /**
  * Fetch messages for a group, ordered by time.
  */
 export async function fetchMessages(groupId, limit = 100) {
-  const { data, error } = await supabase
-    .from('messages')
-    .select('*, sender:profiles!sender_id(full_name, avatar_url)')
-    .eq('group_id', groupId)
-    .order('created_at', { ascending: true })
-    .limit(limit);
-
-  if (error) throw error;
-  return (data || []).map(mapMessage);
+  return apiGet(`/api/messages/${groupId}?limit=${limit}`);
 }
 
 /**
  * Send a text message.
  */
 export async function sendMessage(groupId, senderId, content) {
-  const { data, error } = await supabase
-    .from('messages')
-    .insert({
-      group_id: groupId,
-      sender_id: senderId,
-      content,
-    })
-    .select('*, sender:profiles!sender_id(full_name, avatar_url)')
-    .single();
-
-  if (error) throw error;
-  return mapMessage(data);
+  return apiPost(`/api/messages/${groupId}`, { content });
 }
 
 /**
- * Send a file message — upload file to chat-files bucket, then insert message.
+ * Send a file message — upload file via multer endpoint.
  */
 export async function sendFileMessage(groupId, senderId, file) {
-  const messageId = crypto.randomUUID();
-  const path = `${groupId}/${messageId}/${file.name}`;
+  const formData = new FormData();
+  formData.append('chatFile', file);
 
-  // Upload file
-  const { data: storageData, error: storageError } = await supabase.storage
-    .from('chat-files')
-    .upload(path, file);
-
-  if (storageError) throw storageError;
-
-  // Insert message
-  const { data, error } = await supabase
-    .from('messages')
-    .insert({
-      id: messageId,
-      group_id: groupId,
-      sender_id: senderId,
-      content: null,
-      file_url: storageData.path,
-      file_name: file.name,
-      file_type: file.type,
-    })
-    .select('*, sender:profiles!sender_id(full_name, avatar_url)')
-    .single();
-
-  if (error) throw error;
-  return mapMessage(data);
+  return apiPost(`/api/messages/${groupId}/file`, formData);
 }
 
 /**
- * Subscribe to new messages in a group (realtime).
- * Returns the channel — call supabase.removeChannel(channel) to unsubscribe.
+ * Subscribe to new messages in a group (WebSocket).
+ * Returns an object with a close() method for cleanup.
  */
 export function subscribeToMessages(groupId, onNewMessage) {
-  const channel = supabase
-    .channel(`group-${groupId}`)
-    .on(
-      'postgres_changes',
-      {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'messages',
-        filter: `group_id=eq.${groupId}`,
-      },
-      async (payload) => {
-        // Fetch the full message with sender info
-        const { data } = await supabase
-          .from('messages')
-          .select('*, sender:profiles!sender_id(full_name, avatar_url)')
-          .eq('id', payload.new.id)
-          .single();
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const wsUrl = `${protocol}//localhost:3001`;
 
-        if (data) {
-          onNewMessage(mapMessage(data));
-        }
+  const ws = new WebSocket(wsUrl);
+
+  ws.onopen = () => {
+    ws.send(JSON.stringify({ type: 'join_room', groupId }));
+  };
+
+  ws.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data);
+      if (data.type === 'new_message') {
+        onNewMessage(data.payload);
       }
-    )
-    .subscribe();
+    } catch (e) {
+      console.error('WS message parse error:', e);
+    }
+  };
 
-  return channel;
-}
+  ws.onerror = (err) => {
+    console.error('WebSocket error:', err);
+  };
 
-function mapMessage(row) {
+  // Return an object compatible with the old supabase channel pattern
+  // The old code called supabase.removeChannel(channel)
   return {
-    id: row.id,
-    groupId: row.group_id,
-    senderId: row.sender_id,
-    senderName: row.sender?.full_name || 'Unknown',
-    content: row.file_name || row.content || '',
-    timestamp: row.created_at,
-    type: row.file_url ? 'file' : 'text',
-    fileUrl: row.file_url || null,
-    fileName: row.file_name || null,
-    fileType: row.file_type || null,
-    fileSize: '', // not stored in messages table
+    close: () => ws.close(),
+    unsubscribe: () => ws.close(),
   };
 }

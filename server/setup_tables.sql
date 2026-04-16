@@ -1,0 +1,89 @@
+USE scholargrid;
+
+CREATE TABLE IF NOT EXISTS profiles (
+  id VARCHAR(36) PRIMARY KEY,
+  email VARCHAR(255) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  full_name VARCHAR(255),
+  avatar_url VARCHAR(255),
+  role ENUM('student','admin') NOT NULL DEFAULT 'student',
+  about TEXT,
+  points INT NOT NULL DEFAULT 0,
+  warnings INT NOT NULL DEFAULT 0,
+  is_banned BOOLEAN NOT NULL DEFAULT 0,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS `groups` (
+  id VARCHAR(36) PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  description TEXT,
+  join_code VARCHAR(20) NOT NULL UNIQUE,
+  created_by VARCHAR(36) NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS group_members (
+  group_id VARCHAR(36) NOT NULL,
+  user_id VARCHAR(36) NOT NULL,
+  joined_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (group_id, user_id),
+  FOREIGN KEY (group_id) REFERENCES `groups`(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS messages (
+  id VARCHAR(36) PRIMARY KEY,
+  group_id VARCHAR(36) NOT NULL,
+  sender_id VARCHAR(36) NOT NULL,
+  content TEXT,
+  file_url VARCHAR(255),
+  file_name VARCHAR(255),
+  file_type VARCHAR(100),
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (group_id) REFERENCES `groups`(id) ON DELETE CASCADE,
+  FOREIGN KEY (sender_id) REFERENCES profiles(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS notes (
+  id VARCHAR(36) PRIMARY KEY,
+  uploader_id VARCHAR(36) NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  description TEXT,
+  subject VARCHAR(255) NOT NULL,
+  file_url VARCHAR(255) NOT NULL,
+  file_name VARCHAR(255) NOT NULL,
+  file_type VARCHAR(100) NOT NULL,
+  file_size BIGINT,
+  is_flagged BOOLEAN NOT NULL DEFAULT 0,
+  is_approved BOOLEAN NOT NULL DEFAULT 1,
+  downloads INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (uploader_id) REFERENCES profiles(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS leaderboard_points (
+  id VARCHAR(36) PRIMARY KEY,
+  user_id VARCHAR(36) NOT NULL,
+  points INT NOT NULL,
+  reason ENUM('note_upload','note_download','login_streak','admin_bonus','penalty') NOT NULL,
+  reference_id VARCHAR(36),
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS complaints (
+  id VARCHAR(36) PRIMARY KEY,
+  student_id VARCHAR(36) NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  description TEXT NOT NULL,
+  status ENUM('open','in_progress','resolved','rejected') NOT NULL DEFAULT 'open',
+  admin_reply TEXT,
+  resolved_by VARCHAR(36),
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (student_id) REFERENCES profiles(id) ON DELETE CASCADE,
+  FOREIGN KEY (resolved_by) REFERENCES profiles(id) ON DELETE SET NULL
+);

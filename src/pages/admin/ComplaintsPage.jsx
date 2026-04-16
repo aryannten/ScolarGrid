@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { fetchComplaints, updateComplaintStatus, subscribeToComplaints } from '../../services/complaintsService';
-import { supabase } from '../../lib/supabaseClient';
+
 import { AlertCircle, CheckCircle, Clock, Send, ChevronDown } from 'lucide-react';
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.05 } } };
@@ -30,7 +30,7 @@ export default function ComplaintsPage() {
       if (selected?.id === updated.id) setSelected(updated);
     });
 
-    return () => supabase.removeChannel(channel);
+    return () => channel.close();
   }, []);
 
   const loadComplaints = async () => {

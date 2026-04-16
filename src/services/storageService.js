@@ -1,73 +1,59 @@
-import { supabase } from '../lib/supabaseClient';
+import { api, getToken } from '../lib/apiClient';
 
 /**
- * Upload a user avatar to the 'avatars' bucket.
- * @returns {string} Public URL of the uploaded avatar.
+ * Upload a user avatar.
+ * @returns {string} URL of the uploaded avatar.
  */
 export async function uploadAvatar(userId, file) {
-  const ext = file.name.split('.').pop();
-  const path = `${userId}/avatar.${ext}`;
+  const formData = new FormData();
+  formData.append('avatar', file);
 
-  const { data, error } = await supabase.storage
-    .from('avatars')
-    .upload(path, file, { upsert: true });
+  const token = getToken();
+  const res = await fetch(`/api/users/${userId}/avatar`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}` },
+    body: formData,
+  });
 
-  if (error) throw error;
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(err.error || `HTTP ${res.status}`);
+  }
 
-  const { data: urlData } = supabase.storage
-    .from('avatars')
-    .getPublicUrl(data.path);
-
-  return urlData.publicUrl;
+  const data = await res.json();
+  return data.avatar_url;
 }
 
 /**
- * Upload a note file to 'notes-files' bucket.
- * @returns {string} Storage path of the uploaded file.
+ * Upload a note file — handled by notesService.uploadNote
+ * Kept for backwards compatibility.
  */
 export async function uploadNoteFile(userId, noteId, file) {
-  const path = `${userId}/${noteId}/${file.name}`;
-
-  const { data, error } = await supabase.storage
-    .from('notes-files')
-    .upload(path, file);
-
-  if (error) throw error;
-  return data.path;
+  // Notes are uploaded directly via POST /api/notes with multer
+  // This function is a no-op — file upload is handled in notesService
+  return `/uploads/notes/${file.name}`;
 }
 
 /**
  * Upload a file attachment for a chat message.
- * @returns {string} Storage path.
+ * Handled by messagesService.sendFileMessage
  */
 export async function uploadChatFile(groupId, messageId, file) {
-  const path = `${groupId}/${messageId}/${file.name}`;
-
-  const { data, error } = await supabase.storage
-    .from('chat-files')
-    .upload(path, file);
-
-  if (error) throw error;
-  return data.path;
+  return `/uploads/chat/${file.name}`;
 }
 
 /**
- * Get a download URL for a file in a private bucket.
- * Uses signed URLs (valid 1 hour).
+ * Get a download URL for a file.
+ * Files are served statically, so we just return the path.
  */
 export async function getDownloadUrl(bucket, path) {
-  const { data, error } = await supabase.storage
-    .from(bucket)
-    .createSignedUrl(path, 3600);
-
-  if (error) throw error;
-  return data.signedUrl;
+  // Files are served via Express static at /uploads/...
+  return `/uploads/${bucket}/${path}`;
 }
 
 /**
- * Get a public URL (for public buckets like avatars).
+ * Get a public URL.
  */
 export function getPublicUrl(bucket, path) {
-  const { data } = supabase.storage.from(bucket).getPublicUrl(path);
-  return data.publicUrl;
+  return `/uploads/${bucket}/${path}`;
 }

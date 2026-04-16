@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { fetchComplaints, createComplaint, subscribeToComplaints } from '../../services/complaintsService';
-import { supabase } from '../../lib/supabaseClient';
+
 import { MessageCircle, Plus, X, Clock, CheckCircle, AlertCircle, ChevronDown, Send, Bot } from 'lucide-react';
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.05 } } };
@@ -35,7 +35,7 @@ export default function FeedbackPage() {
     });
 
     return () => {
-      supabase.removeChannel(channel);
+      channel.close();
     };
   }, []);
 

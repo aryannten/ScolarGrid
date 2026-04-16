@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { fetchUserGroups, joinGroup } from '../../services/groupsService';
 import { fetchMessages, sendMessage, subscribeToMessages } from '../../services/messagesService';
-import { supabase } from '../../lib/supabaseClient';
+
 import { Search, Send, Paperclip, Hash, Users, Clock, Plus, X, Copy, Check, File } from 'lucide-react';
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.05 } } };
@@ -47,7 +47,7 @@ export default function ChatPage() {
 
     // Subscribe to new messages
     if (channelRef.current) {
-      supabase.removeChannel(channelRef.current);
+      channelRef.current.close();
     }
     channelRef.current = subscribeToMessages(selectedGroup.id, (newMsg) => {
       setMessages(prev => {
@@ -59,7 +59,7 @@ export default function ChatPage() {
 
     return () => {
       if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
+        channelRef.current.close();
       }
     };
   }, [selectedGroup]);

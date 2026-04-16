@@ -1,15 +1,30 @@
-import { createClient } from '@supabase/supabase-js';
+/**
+ * DEPRECATED — Supabase client is no longer used.
+ * All services now use apiClient.js with the Express backend.
+ *
+ * This file is kept as a stub so that any stale imports
+ * don't crash the app at startup.
+ */
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn(
-    'Supabase credentials missing. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env'
-  );
-}
-
-export const supabase = createClient(
-  supabaseUrl || '',
-  supabaseAnonKey || ''
-);
+export const supabase = {
+  from: () => ({
+    select: () => ({ eq: () => ({ single: () => ({ data: null, error: { message: 'Supabase removed — use apiClient' } }) }) }),
+  }),
+  auth: {
+    getSession: () => Promise.resolve({ data: { session: null } }),
+    signInWithPassword: () => Promise.resolve({ data: null, error: { message: 'Use /api/auth/login' } }),
+    signUp: () => Promise.resolve({ data: null, error: { message: 'Use /api/auth/signup' } }),
+    signOut: () => Promise.resolve(),
+    onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+  },
+  storage: {
+    from: () => ({
+      upload: () => Promise.resolve({ data: null, error: { message: 'Use multer endpoints' } }),
+      getPublicUrl: () => ({ data: { publicUrl: '' } }),
+    }),
+  },
+  channel: () => ({
+    on: () => ({ subscribe: () => ({}) }),
+  }),
+  removeChannel: () => {},
+};
