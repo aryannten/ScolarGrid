@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ScholarGrid Project Report</title>
+  <style>
+    body { font-family: Arial, sans-serif; color: #111; margin: 36px; line-height: 1.4; }
+    h1, h2 { margin: 0 0 10px 0; }
+    h1 { font-size: 24px; }
+    h2 { font-size: 18px; margin-top: 22px; }
+    p { margin: 8px 0; }
+    ul { margin: 6px 0 10px 22px; }
+    pre { background: #f5f5f5; border: 1px solid #ddd; padding: 12px; white-space: pre-wrap; font-size: 12px; }
+    code { font-family: Consolas, monospace; }
+    .muted { color: #666; }
+  </style>
+</head>
+<body>
+  <h1>ScholarGrid Project Report</h1>
+  <p class="muted">Generated on April 13, 2026</p>
+
+  <h2>Tech Stack</h2>
+  <ul>
+    <li>React 19.2.4 + React DOM 19.2.4</li>
+    <li>Vite 8.0.1</li>
+    <li>React Router DOM 7.13.1</li>
+    <li>Tailwind CSS 3.4.19 + PostCSS + Autoprefixer</li>
+    <li>Framer Motion 12.38.0</li>
+    <li>Lucide React 0.577.0</li>
+    <li>ESLint 9.39.4</li>
+  </ul>
+
+  <h2>How It Works</h2>
+  <ul>
+    <li><code>main.jsx</code> mounts the React app.</li>
+    <li><code>App.jsx</code> wraps <code>ThemeProvider</code> and <code>AuthProvider</code>.</li>
+    <li><code>AppRouter.jsx</code> defines public and protected routes.</li>
+    <li><code>ProtectedRoute.jsx</code> enforces role-based access (student/admin).</li>
+    <li>Auth and theme are stored in <code>localStorage</code>.</li>
+    <li>Data is mock/in-memory from <code>src/data/mockData.js</code> (no backend in this folder).</li>
+  </ul>
+
+  <h2>Project Structure</h2>
+  <pre>pop/
+|-- public/
+|   |-- favicon.svg
+|   `-- icons.svg
+|-- src/
+|   |-- components/
+|   |   `-- layout/
+|   |       |-- AdminLayout.jsx
+|   |       `-- StudentLayout.jsx
+|   |-- context/
+|   |   |-- AuthContext.jsx
+|   |   `-- ThemeContext.jsx
+|   |-- data/
+|   |   `-- mockData.js
+|   |-- pages/
+|   |   |-- admin/
+|   |   |   |-- AdminDashboard.jsx
+|   |   |   |-- AnalyticsPage.jsx
+|   |   |   |-- ComplaintsPage.jsx
+|   |   |   |-- GroupsPage.jsx
+|   |   |   |-- NotesModeration.jsx
+|   |   |   `-- UsersPage.jsx
+|   |   |-- auth/
+|   |   |   |-- LoginPage.jsx
+|   |   |   `-- SignupPage.jsx
+|   |   `-- student/
+|   |       |-- ChatPage.jsx
+|   |       |-- Dashboard.jsx
+|   |       |-- FeedbackPage.jsx
+|   |       |-- LeaderboardPage.jsx
+|   |       |-- NotesPage.jsx
+|   |       `-- ProfilePage.jsx
+|   |-- routes/
+|   |   |-- AppRouter.jsx
+|   |   `-- ProtectedRoute.jsx
+|   |-- App.jsx
+|   |-- index.css
+|   `-- main.jsx
+|-- eslint.config.js
+|-- index.html
+|-- package.json
+|-- postcss.config.js
+|-- tailwind.config.js
+`-- vite.config.js</pre>
+
+  <h2>Naming Notes</h2>
+  <ul>
+    <li>Current naming is mostly good and consistent.</li>
+    <li>Recommended: rename <code>src/pages/student/Dashboard.jsx</code> to <code>StudentDashboard.jsx</code> for symmetry with admin naming.</li>
+    <li>Recommended: rename <code>NotesModeration.jsx</code> to <code>NotesModerationPage.jsx</code> for consistent page naming.</li>
+  </ul>
+
+  <h2>Frontend Features</h2>
+  <ul>
+    <li>Role-based auth UI with Login and Signup pages using Student/Admin toggle.</li>
+    <li>Protected routes with role checks and automatic redirects.</li>
+    <li>Session persistence via localStorage.</li>
+    <li>Dark/Light theme toggle with saved preference.</li>
+    <li>Responsive student and admin layouts with desktop and mobile sidebars.</li>
+    <li>Top navigation with search input, notification icon, and profile menu.</li>
+    <li>Student dashboard with welcome banner, stats, activity feed, and trending notes.</li>
+    <li>Notes library with search, subject filter, sorting, and grid/list view switching.</li>
+    <li>Notes upload modal with metadata form and file upload dropzone UI placeholder.</li>
+    <li>Group chat UI with chat list, message thread, message send, and file-message display.</li>
+    <li>Join group modal with join code and copy-to-clipboard support.</li>
+    <li>Leaderboard with rank banner, podium, tier legend, and full ranking table.</li>
+    <li>Feedback module with complaint creation, status filtering, and response tracking.</li>
+    <li>Profile page with editable name/about, user stats, and preferences.</li>
+    <li>Admin dashboard with KPIs, trends, top subjects, and quick panels.</li>
+    <li>Analytics page with user growth, uploads, subject distribution, and top performers.</li>
+    <li>Chat group management for admins with create/delete and join-code copy.</li>
+    <li>Notes moderation with search/filter, flag/unflag, and delete actions.</li>
+    <li>User management with search, warn, and ban/unban controls.</li>
+    <li>Complaint resolution panel with status updates and admin replies.</li>
+    <li>Tailwind-based design system with reusable UI classes.</li>
+    <li>Framer Motion animations for pages, cards, and modals.</li>
+    <li>Lucide icon system across all modules.</li>
+    <li>Custom scrollbars, gradients, and styled utility components.</li>
+    <li>All data is mock/in-memory from <code>src/data/mockData.js</code> (no real backend APIs in this folder).</li>
+  </ul>
+
+  <h2>NPM Scripts</h2>
+  <ul>
+    <li><code>npm run dev</code>: development server</li>
+    <li><code>npm run build</code>: production build</li>
+    <li><code>npm run preview</code>: serve built output</li>
+    <li><code>npm run lint</code>: lint checks</li>
+  </ul>
+</body>
+</html>

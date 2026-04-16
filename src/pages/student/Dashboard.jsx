@@ -1,6 +1,8 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
-import { NOTES, ACTIVITY_FEED, LEADERBOARD } from '../../data/mockData';
+import { fetchNotes } from '../../services/notesService';
+import { fetchLeaderboard } from '../../services/leaderboardService';
 import { FileText, Download, Star, Trophy, Upload, MessageSquare, ArrowUpRight, TrendingUp, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -9,13 +11,48 @@ const item = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } };
 
 export default function StudentDashboard() {
   const { user } = useAuth();
+  const [trendingNotes, setTrendingNotes] = useState([]);
+  const [leaderboard, setLeaderboard] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      const [notes, lb] = await Promise.all([
+        fetchNotes({ sortBy: 'downloads', limit: 4 }),
+        fetchLeaderboard(10),
+      ]);
+      setTrendingNotes(notes);
+      setLeaderboard(lb);
+    } catch (err) {
+      console.error('Dashboard load error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const currentRank = leaderboard.findIndex(u => u.id === user?.id) + 1;
 
   const stats = [
-    { label: 'Notes Uploaded', value: user?.uploads || 23, icon: Upload, color: 'text-brand-500', bg: 'bg-brand-50 dark:bg-brand-900/20' },
-    { label: 'Total Downloads', value: user?.downloads || 156, icon: Download, color: 'text-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
-    { label: 'Current Rating', value: '4.7', icon: Star, color: 'text-gold-500', bg: 'bg-gold-50 dark:bg-gold-900/20' },
-    { label: 'Leaderboard Rank', value: `#${LEADERBOARD.findIndex(u => u.id === user?.id) + 1 || 2}`, icon: Trophy, color: 'text-purple-500', bg: 'bg-purple-50 dark:bg-purple-900/20' },
+    { label: 'Notes Uploaded', value: user?.uploads || 0, icon: Upload, color: 'text-brand-500', bg: 'bg-brand-50 dark:bg-brand-900/20' },
+    { label: 'Total Downloads', value: user?.downloads || 0, icon: Download, color: 'text-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
+    { label: 'Points', value: user?.score || 0, icon: Star, color: 'text-gold-500', bg: 'bg-gold-50 dark:bg-gold-900/20' },
+    { label: 'Leaderboard Rank', value: currentRank > 0 ? `#${currentRank}` : '—', icon: Trophy, color: 'text-purple-500', bg: 'bg-purple-50 dark:bg-purple-900/20' },
   ];
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="h-40 rounded-2xl bg-gray-100 dark:bg-dark-surface animate-pulse" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1,2,3,4].map(i => <div key={i} className="h-28 rounded-2xl bg-gray-100 dark:bg-dark-surface animate-pulse" />)}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
@@ -40,12 +77,8 @@ export default function StudentDashboard() {
 
       {/* Stats Grid */}
       <motion.div variants={item} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat, i) => (
-          <motion.div
-            key={stat.label}
-            variants={item}
-            className="glass-card-hover p-5"
-          >
+        {stats.map((stat) => (
+          <motion.div key={stat.label} variants={item} className="glass-card-hover p-5">
             <div className={`w-10 h-10 rounded-xl ${stat.bg} flex items-center justify-center mb-3`}>
               <stat.icon className={`w-5 h-5 ${stat.color}`} />
             </div>
@@ -57,32 +90,26 @@ export default function StudentDashboard() {
 
       {/* Two Column Layout */}
       <div className="grid lg:grid-cols-3 gap-6">
-        {/* Recent Activity */}
+        {/* Recent Activity / Points Summary */}
         <motion.div variants={item} className="lg:col-span-2 glass-card p-6">
           <div className="flex items-center justify-between mb-5">
-            <h2 className="text-lg font-serif font-bold text-gray-900 dark:text-white">Recent Activity</h2>
+            <h2 className="text-lg font-serif font-bold text-gray-900 dark:text-white">Top Contributors</h2>
             <Zap className="w-5 h-5 text-gold-500" />
           </div>
           <div className="space-y-4">
-            {ACTIVITY_FEED.slice(0, 5).map((activity) => (
-              <div key={activity.id} className="flex items-start gap-3 group">
+            {leaderboard.slice(0, 5).map((entry) => (
+              <div key={entry.id} className="flex items-start gap-3 group">
                 <div className="w-8 h-8 rounded-full bg-brand-50 dark:bg-brand-900/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  {activity.type === 'upload' && <Upload className="w-4 h-4 text-brand-500" />}
-                  {activity.type === 'rating' && <Star className="w-4 h-4 text-gold-500" />}
-                  {activity.type === 'join' && <MessageSquare className="w-4 h-4 text-emerald-500" />}
-                  {activity.type === 'complaint' && <FileText className="w-4 h-4 text-orange-500" />}
-                  {activity.type === 'download' && <Download className="w-4 h-4 text-blue-500" />}
-                  {activity.type === 'resolve' && <TrendingUp className="w-4 h-4 text-emerald-500" />}
+                  <span className="text-xs font-bold text-brand-500">#{entry.rank}</span>
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-gray-700 dark:text-gray-300">
-                    <span className="font-semibold">{activity.user}</span>{' '}
-                    {activity.action}{' '}
-                    <span className="font-medium text-brand-600 dark:text-brand-400">{activity.target}</span>
-                    {activity.detail && <span className="text-gold-500 ml-1">({activity.detail})</span>}
+                    <span className="font-semibold">{entry.name}</span>
+                    {entry.id === user?.id && <span className="text-brand-500 text-xs ml-1">(You)</span>}
                   </p>
-                  <p className="text-xs text-gray-400 mt-0.5">{activity.time}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{entry.score} points · {entry.tier}</p>
                 </div>
+                <TrendingUp className="w-4 h-4 text-emerald-500" />
               </div>
             ))}
           </div>
@@ -97,13 +124,16 @@ export default function StudentDashboard() {
             </Link>
           </div>
           <div className="space-y-3">
-            {NOTES.sort((a, b) => b.downloads - a.downloads).slice(0, 4).map((note, i) => (
+            {trendingNotes.length === 0 && (
+              <p className="text-sm text-gray-400 text-center py-4">No notes yet. Be the first to upload!</p>
+            )}
+            {trendingNotes.map((note, i) => (
               <div key={note.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-dark-hover transition-colors cursor-pointer group">
                 <span className="text-lg font-bold text-gray-300 dark:text-gray-600 w-6">{i + 1}</span>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">{note.title}</p>
                   <div className="flex items-center gap-2 text-xs text-gray-400 mt-0.5">
-                    <span className="flex items-center gap-1"><Star className="w-3 h-3 text-gold-400" />{note.rating}</span>
+                    <span>{note.subject}</span>
                     <span>·</span>
                     <span>{note.downloads} downloads</span>
                   </div>

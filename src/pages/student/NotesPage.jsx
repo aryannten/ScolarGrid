@@ -1,47 +1,87 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { NOTES, SUBJECTS } from '../../data/mockData';
+import { useAuth } from '../../context/AuthContext';
+import { fetchNotes, fetchSubjects, uploadNote } from '../../services/notesService';
 import { FileText, Download, Star, Search, Filter, Grid3X3, List, Upload, X, Tag, Clock, User, ChevronDown } from 'lucide-react';
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.05 } } };
 const item = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } };
 
+const DEFAULT_SUBJECTS = ['Computer Science', 'Mathematics', 'Physics', 'Chemistry', 'Electrical Engineering', 'Mechanical Engineering', 'Biology', 'Economics'];
+
 export default function NotesPage() {
-  const [notes, setNotes] = useState(NOTES);
+  const { user } = useAuth();
+  const [notes, setNotes] = useState([]);
+  const [subjects, setSubjects] = useState(DEFAULT_SUBJECTS);
   const [search, setSearch] = useState('');
   const [subject, setSubject] = useState('All');
   const [viewMode, setViewMode] = useState('grid');
   const [showUpload, setShowUpload] = useState(false);
   const [sortBy, setSortBy] = useState('recent');
   const [uploadForm, setUploadForm] = useState({ title: '', description: '', subject: '', tags: '' });
+  const [uploadFile, setUploadFile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
 
-  const filtered = notes
-    .filter(n => (subject === 'All' || n.subject === subject))
-    .filter(n => n.title.toLowerCase().includes(search.toLowerCase()) || n.description.toLowerCase().includes(search.toLowerCase()))
-    .sort((a, b) => {
-      if (sortBy === 'rating') return b.rating - a.rating;
-      if (sortBy === 'downloads') return b.downloads - a.downloads;
-      return new Date(b.createdAt) - new Date(a.createdAt);
-    });
+  useEffect(() => {
+    loadNotes();
+    loadSubjects();
+  }, [subject, sortBy]);
 
-  const handleUpload = (e) => {
+  const loadNotes = async () => {
+    try {
+      setLoading(true);
+      const data = await fetchNotes({ subject, search, sortBy });
+      setNotes(data);
+    } catch (err) {
+      console.error('Error loading notes:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadSubjects = async () => {
+    try {
+      const s = await fetchSubjects();
+      if (s.length > 0) setSubjects(s);
+    } catch (err) {
+      // Keep defaults
+    }
+  };
+
+  // Debounced search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      loadNotes();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  const filtered = notes.filter(n =>
+    n.title.toLowerCase().includes(search.toLowerCase()) ||
+    n.description.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const handleUpload = async (e) => {
     e.preventDefault();
-    const newNote = {
-      id: String(Date.now()),
-      ...uploadForm,
-      tags: uploadForm.tags.split(',').map(t => t.trim()),
-      uploaderId: '2',
-      uploaderName: 'Current User',
-      createdAt: new Date().toISOString().split('T')[0],
-      fileType: 'PDF',
-      fileSize: '2.1 MB',
-      downloads: 0,
-      rating: 0,
-      totalRatings: 0,
-    };
-    setNotes([newNote, ...notes]);
-    setShowUpload(false);
-    setUploadForm({ title: '', description: '', subject: '', tags: '' });
+    if (!user) return;
+    setUploading(true);
+    try {
+      const newNote = await uploadNote(user.id, {
+        title: uploadForm.title,
+        description: uploadForm.description,
+        subject: uploadForm.subject,
+      }, uploadFile);
+      setNotes([newNote, ...notes]);
+      setShowUpload(false);
+      setUploadForm({ title: '', description: '', subject: '', tags: '' });
+      setUploadFile(null);
+    } catch (err) {
+      console.error('Upload error:', err);
+      alert('Upload failed: ' + err.message);
+    } finally {
+      setUploading(false);
+    }
   };
 
   const renderStars = (rating) => (
@@ -76,14 +116,13 @@ export default function NotesPage() {
           <div className="relative">
             <select value={subject} onChange={e => setSubject(e.target.value)} className="input-field pr-10 appearance-none cursor-pointer min-w-[160px]">
               <option value="All">All Subjects</option>
-              {SUBJECTS.map(s => <option key={s} value={s}>{s}</option>)}
+              {subjects.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
           </div>
           <div className="relative">
             <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="input-field pr-10 appearance-none cursor-pointer min-w-[130px]">
               <option value="recent">Most Recent</option>
-              <option value="rating">Top Rated</option>
               <option value="downloads">Most Downloaded</option>
             </select>
             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
@@ -99,8 +138,17 @@ export default function NotesPage() {
         </div>
       </motion.div>
 
+      {/* Loading */}
+      {loading && (
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1,2,3,4,5,6].map(i => (
+            <div key={i} className="h-48 rounded-2xl bg-gray-100 dark:bg-dark-surface animate-pulse" />
+          ))}
+        </div>
+      )}
+
       {/* Notes Grid/List */}
-      {viewMode === 'grid' ? (
+      {!loading && viewMode === 'grid' ? (
         <motion.div variants={container} className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map(note => (
             <motion.div key={note.id} variants={item} className="glass-card-hover p-5 flex flex-col">
@@ -127,7 +175,7 @@ export default function NotesPage() {
               </div>
               <div className="mt-auto pt-3 border-t border-gray-100 dark:border-dark-border/50">
                 <div className="flex items-center justify-between">
-                  {renderStars(note.rating)}
+                  <span className="text-xs text-gray-500">{note.subject}</span>
                   <div className="flex items-center gap-1 text-xs text-gray-400">
                     <Download className="w-3 h-3" /> {note.downloads}
                   </div>
@@ -139,8 +187,14 @@ export default function NotesPage() {
               </div>
             </motion.div>
           ))}
+          {filtered.length === 0 && !loading && (
+            <div className="col-span-full text-center py-12">
+              <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-500">No notes found. Try a different search or upload your own!</p>
+            </div>
+          )}
         </motion.div>
-      ) : (
+      ) : !loading ? (
         <motion.div variants={container} className="space-y-3">
           {filtered.map(note => (
             <motion.div key={note.id} variants={item} className="glass-card-hover p-4 flex items-center gap-4">
@@ -159,14 +213,13 @@ export default function NotesPage() {
                 </div>
               </div>
               <div className="hidden sm:flex items-center gap-4 flex-shrink-0">
-                {renderStars(note.rating)}
                 <div className="flex items-center gap-1 text-sm text-gray-500"><Download className="w-4 h-4" /> {note.downloads}</div>
                 <button className="btn-secondary text-sm py-1.5 px-3">Download</button>
               </div>
             </motion.div>
           ))}
         </motion.div>
-      )}
+      ) : null}
 
       {/* Upload Modal */}
       <AnimatePresence>
@@ -186,17 +239,36 @@ export default function NotesPage() {
                 <textarea value={uploadForm.description} onChange={e => setUploadForm({ ...uploadForm, description: e.target.value })} placeholder="Description" className="input-field min-h-[80px] resize-none" required />
                 <select value={uploadForm.subject} onChange={e => setUploadForm({ ...uploadForm, subject: e.target.value })} className="input-field" required>
                   <option value="">Select subject</option>
-                  {SUBJECTS.map(s => <option key={s} value={s}>{s}</option>)}
+                  {subjects.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
-                <input type="text" value={uploadForm.tags} onChange={e => setUploadForm({ ...uploadForm, tags: e.target.value })} placeholder="Tags (comma-separated)" className="input-field" />
-                <div className="border-2 border-dashed border-gray-200 dark:border-dark-border rounded-xl p-8 text-center cursor-pointer hover:border-brand-500/50 transition-colors">
+                <div
+                  className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer hover:border-brand-500/50 transition-colors ${
+                    uploadFile ? 'border-brand-500 bg-brand-50/50 dark:bg-brand-900/10' : 'border-gray-200 dark:border-dark-border'
+                  }`}
+                  onClick={() => document.getElementById('file-input').click()}
+                >
+                  <input
+                    id="file-input"
+                    type="file"
+                    className="hidden"
+                    accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.png,.jpg,.jpeg"
+                    onChange={e => setUploadFile(e.target.files[0])}
+                  />
                   <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-sm text-gray-500">Click or drag files to upload</p>
-                  <p className="text-xs text-gray-400 mt-1">PDF, PPT, DOC up to 50MB</p>
+                  {uploadFile ? (
+                    <p className="text-sm text-brand-600 font-medium">{uploadFile.name}</p>
+                  ) : (
+                    <>
+                      <p className="text-sm text-gray-500">Click or drag files to upload</p>
+                      <p className="text-xs text-gray-400 mt-1">PDF, PPT, DOC up to 20MB</p>
+                    </>
+                  )}
                 </div>
                 <div className="flex gap-3 pt-2">
                   <button type="button" onClick={() => setShowUpload(false)} className="btn-secondary flex-1">Cancel</button>
-                  <button type="submit" className="btn-primary flex-1">Upload</button>
+                  <button type="submit" disabled={uploading} className="btn-primary flex-1">
+                    {uploading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto" /> : 'Upload'}
+                  </button>
                 </div>
               </form>
             </motion.div>

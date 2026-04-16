@@ -1,6 +1,7 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { LEADERBOARD, TIER_THRESHOLDS } from '../../data/mockData';
 import { useAuth } from '../../context/AuthContext';
+import { fetchLeaderboard, TIER_THRESHOLDS } from '../../services/leaderboardService';
 import { Trophy, Medal, Star, TrendingUp, Crown, Award, Flame } from 'lucide-react';
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.06 } } };
@@ -15,10 +16,37 @@ const tierConfig = {
 
 export default function LeaderboardPage() {
   const { user } = useAuth();
+  const [leaderboard, setLeaderboard] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const top3 = LEADERBOARD.slice(0, 3);
-  const rest = LEADERBOARD.slice(3);
-  const currentUserRank = LEADERBOARD.findIndex(u => u.id === user?.id) + 1;
+  useEffect(() => {
+    loadLeaderboard();
+  }, []);
+
+  const loadLeaderboard = async () => {
+    try {
+      const data = await fetchLeaderboard(50);
+      setLeaderboard(data);
+    } catch (err) {
+      console.error('Error loading leaderboard:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const top3 = leaderboard.slice(0, 3);
+  const rest = leaderboard.slice(3);
+  const currentUserRank = leaderboard.findIndex(u => u.id === user?.id) + 1;
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="h-8 w-48 rounded bg-gray-100 dark:bg-dark-surface animate-pulse" />
+        <div className="h-24 rounded-2xl bg-gray-100 dark:bg-dark-surface animate-pulse" />
+        <div className="h-64 rounded-2xl bg-gray-100 dark:bg-dark-surface animate-pulse" />
+      </div>
+    );
+  }
 
   return (
     <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
@@ -47,56 +75,54 @@ export default function LeaderboardPage() {
       )}
 
       {/* Top 3 Podium */}
-      <motion.div variants={item} className="flex items-end justify-center gap-4 py-8">
-        {/* 2nd Place */}
-        {top3[1] && (
-          <motion.div variants={item} className="text-center">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-gray-300 to-gray-500 flex items-center justify-center mx-auto mb-2 border-2 border-gray-300 shadow-lg">
-              <span className="text-xl font-bold text-white">{top3[1].name.charAt(0)}</span>
-            </div>
-            <p className="text-sm font-semibold text-gray-900 dark:text-white truncate max-w-[100px]">{top3[1].name.split(' ')[0]}</p>
-            <p className="text-xs text-gray-400">{top3[1].score} pts</p>
-            <div className="mt-2 w-24 h-20 bg-gray-200 dark:bg-gray-700 rounded-t-xl flex items-center justify-center">
-              <span className="text-2xl font-bold text-gray-400">2</span>
-            </div>
-          </motion.div>
-        )}
-
-        {/* 1st Place */}
-        {top3[0] && (
-          <motion.div variants={item} className="text-center">
-            <motion.div
-              animate={{ y: [0, -8, 0] }}
-              transition={{ repeat: Infinity, duration: 2 }}
-              className="mb-2"
-            >
-              <Crown className="w-8 h-8 text-gold-400 mx-auto mb-1" />
+      {top3.length > 0 && (
+        <motion.div variants={item} className="flex items-end justify-center gap-4 py-8">
+          {/* 2nd Place */}
+          {top3[1] && (
+            <motion.div variants={item} className="text-center">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-gray-300 to-gray-500 flex items-center justify-center mx-auto mb-2 border-2 border-gray-300 shadow-lg">
+                <span className="text-xl font-bold text-white">{top3[1].name.charAt(0)}</span>
+              </div>
+              <p className="text-sm font-semibold text-gray-900 dark:text-white truncate max-w-[100px]">{top3[1].name.split(' ')[0]}</p>
+              <p className="text-xs text-gray-400">{top3[1].score} pts</p>
+              <div className="mt-2 w-24 h-20 bg-gray-200 dark:bg-gray-700 rounded-t-xl flex items-center justify-center">
+                <span className="text-2xl font-bold text-gray-400">2</span>
+              </div>
             </motion.div>
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center mx-auto mb-2 border-2 border-gold-300 shadow-glow-gold">
-              <span className="text-2xl font-bold text-white">{top3[0].name.charAt(0)}</span>
-            </div>
-            <p className="text-sm font-semibold text-gray-900 dark:text-white">{top3[0].name.split(' ')[0]}</p>
-            <p className="text-xs text-gold-500 font-bold">{top3[0].score} pts</p>
-            <div className="mt-2 w-28 h-28 bg-gradient-to-t from-gold-500/30 to-gold-400/10 dark:from-gold-900/40 dark:to-gold-800/10 rounded-t-xl flex items-center justify-center border border-gold-400/30">
-              <span className="text-3xl font-bold gradient-text-gold">1</span>
-            </div>
-          </motion.div>
-        )}
+          )}
 
-        {/* 3rd Place */}
-        {top3[2] && (
-          <motion.div variants={item} className="text-center">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center mx-auto mb-2 border-2 border-orange-300 shadow-lg">
-              <span className="text-xl font-bold text-white">{top3[2].name.charAt(0)}</span>
-            </div>
-            <p className="text-sm font-semibold text-gray-900 dark:text-white truncate max-w-[100px]">{top3[2].name.split(' ')[0]}</p>
-            <p className="text-xs text-gray-400">{top3[2].score} pts</p>
-            <div className="mt-2 w-24 h-16 bg-orange-200/50 dark:bg-orange-900/20 rounded-t-xl flex items-center justify-center border border-orange-400/20">
-              <span className="text-2xl font-bold text-orange-400">3</span>
-            </div>
-          </motion.div>
-        )}
-      </motion.div>
+          {/* 1st Place */}
+          {top3[0] && (
+            <motion.div variants={item} className="text-center">
+              <motion.div animate={{ y: [0, -8, 0] }} transition={{ repeat: Infinity, duration: 2 }} className="mb-2">
+                <Crown className="w-8 h-8 text-gold-400 mx-auto mb-1" />
+              </motion.div>
+              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center mx-auto mb-2 border-2 border-gold-300 shadow-glow-gold">
+                <span className="text-2xl font-bold text-white">{top3[0].name.charAt(0)}</span>
+              </div>
+              <p className="text-sm font-semibold text-gray-900 dark:text-white">{top3[0].name.split(' ')[0]}</p>
+              <p className="text-xs text-gold-500 font-bold">{top3[0].score} pts</p>
+              <div className="mt-2 w-28 h-28 bg-gradient-to-t from-gold-500/30 to-gold-400/10 dark:from-gold-900/40 dark:to-gold-800/10 rounded-t-xl flex items-center justify-center border border-gold-400/30">
+                <span className="text-3xl font-bold gradient-text-gold">1</span>
+              </div>
+            </motion.div>
+          )}
+
+          {/* 3rd Place */}
+          {top3[2] && (
+            <motion.div variants={item} className="text-center">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center mx-auto mb-2 border-2 border-orange-300 shadow-lg">
+                <span className="text-xl font-bold text-white">{top3[2].name.charAt(0)}</span>
+              </div>
+              <p className="text-sm font-semibold text-gray-900 dark:text-white truncate max-w-[100px]">{top3[2].name.split(' ')[0]}</p>
+              <p className="text-xs text-gray-400">{top3[2].score} pts</p>
+              <div className="mt-2 w-24 h-16 bg-orange-200/50 dark:bg-orange-900/20 rounded-t-xl flex items-center justify-center border border-orange-400/20">
+                <span className="text-2xl font-bold text-orange-400">3</span>
+              </div>
+            </motion.div>
+          )}
+        </motion.div>
+      )}
 
       {/* Tier Legend */}
       <motion.div variants={item} className="flex flex-wrap justify-center gap-4">
@@ -117,12 +143,16 @@ export default function LeaderboardPage() {
         <div className="table-header px-6 py-3 flex items-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
           <span className="w-16">Rank</span>
           <span className="flex-1">Contributor</span>
-          <span className="w-24 text-center hidden sm:block">Uploads</span>
-          <span className="w-24 text-center hidden sm:block">Downloads</span>
           <span className="w-20 text-center">Tier</span>
           <span className="w-24 text-right">Score</span>
         </div>
-        {LEADERBOARD.map((entry) => {
+        {leaderboard.length === 0 && (
+          <div className="text-center py-12">
+            <Trophy className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+            <p className="text-gray-500">No rankings yet. Upload notes to earn points!</p>
+          </div>
+        )}
+        {leaderboard.map((entry) => {
           const cfg = tierConfig[entry.tier || 'Bronze'];
           const isCurrentUser = entry.id === user?.id;
           return (
@@ -147,8 +177,6 @@ export default function LeaderboardPage() {
                   <p className="text-xs text-gray-400">{entry.about}</p>
                 </div>
               </div>
-              <span className="w-24 text-center text-sm text-gray-600 dark:text-gray-400 hidden sm:block">{entry.uploads || 0}</span>
-              <span className="w-24 text-center text-sm text-gray-600 dark:text-gray-400 hidden sm:block">{entry.downloads || 0}</span>
               <span className="w-20 text-center">
                 <span className={`badge ${cfg.bg} ${cfg.text} text-xs font-bold`}>{entry.tier || 'Bronze'}</span>
               </span>

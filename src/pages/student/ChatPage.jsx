@@ -1,42 +1,116 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CHAT_GROUPS, MESSAGES } from '../../data/mockData';
 import { useAuth } from '../../context/AuthContext';
+import { fetchUserGroups, joinGroup } from '../../services/groupsService';
+import { fetchMessages, sendMessage, subscribeToMessages } from '../../services/messagesService';
+import { supabase } from '../../lib/supabaseClient';
 import { Search, Send, Paperclip, Hash, Users, Clock, Plus, X, Copy, Check, File } from 'lucide-react';
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.05 } } };
 
 export default function ChatPage() {
   const { user } = useAuth();
-  const [groups] = useState(CHAT_GROUPS);
+  const [groups, setGroups] = useState([]);
   const [selectedGroup, setSelectedGroup] = useState(null);
-  const [messages, setMessages] = useState(MESSAGES);
+  const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [searchGroup, setSearchGroup] = useState('');
   const [showJoin, setShowJoin] = useState(false);
   const [joinCode, setJoinCode] = useState('');
   const [copied, setCopied] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [joining, setJoining] = useState(false);
+  const [joinError, setJoinError] = useState('');
+  const messagesEndRef = useRef(null);
+  const channelRef = useRef(null);
+
+  useEffect(() => {
+    if (user) loadGroups();
+  }, [user]);
+
+  const loadGroups = async () => {
+    try {
+      setLoading(true);
+      const data = await fetchUserGroups(user.id);
+      setGroups(data);
+    } catch (err) {
+      console.error('Error loading groups:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load messages when group changes
+  useEffect(() => {
+    if (!selectedGroup) return;
+    loadMessages(selectedGroup.id);
+
+    // Subscribe to new messages
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+    }
+    channelRef.current = subscribeToMessages(selectedGroup.id, (newMsg) => {
+      setMessages(prev => {
+        // Avoid duplicates
+        if (prev.find(m => m.id === newMsg.id)) return prev;
+        return [...prev, newMsg];
+      });
+    });
+
+    return () => {
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+      }
+    };
+  }, [selectedGroup]);
+
+  // Auto-scroll to bottom
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const loadMessages = async (groupId) => {
+    try {
+      const data = await fetchMessages(groupId);
+      setMessages(data);
+    } catch (err) {
+      console.error('Error loading messages:', err);
+    }
+  };
 
   const filteredGroups = groups.filter(g => g.name.toLowerCase().includes(searchGroup.toLowerCase()));
-  const currentMessages = selectedGroup ? (messages[selectedGroup.id] || []) : [];
 
-  const sendMessage = (e) => {
+  const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!newMessage.trim() || !selectedGroup) return;
-    const msg = {
-      id: `m${Date.now()}`,
-      groupId: selectedGroup.id,
-      senderId: user?.id || '2',
-      senderName: user?.name || 'You',
-      content: newMessage,
-      timestamp: new Date().toISOString(),
-      type: 'text',
-    };
-    setMessages(prev => ({
-      ...prev,
-      [selectedGroup.id]: [...(prev[selectedGroup.id] || []), msg],
-    }));
+    if (!newMessage.trim() || !selectedGroup || !user) return;
+    const content = newMessage;
     setNewMessage('');
+    try {
+      const msg = await sendMessage(selectedGroup.id, user.id, content);
+      setMessages(prev => {
+        if (prev.find(m => m.id === msg.id)) return prev;
+        return [...prev, msg];
+      });
+    } catch (err) {
+      console.error('Error sending message:', err);
+      setNewMessage(content); // Restore on error
+    }
+  };
+
+  const handleJoinGroup = async () => {
+    if (!joinCode.trim() || !user) return;
+    setJoining(true);
+    setJoinError('');
+    try {
+      await joinGroup(user.id, joinCode);
+      await loadGroups();
+      setShowJoin(false);
+      setJoinCode('');
+    } catch (err) {
+      setJoinError(err.message);
+    } finally {
+      setJoining(false);
+    }
   };
 
   const copyCode = (code) => {
@@ -49,6 +123,15 @@ export default function ChatPage() {
     const d = new Date(ts);
     return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
+
+  if (loading) {
+    return (
+      <div className="h-[calc(100vh-7rem)] flex gap-4">
+        <div className="w-80 rounded-2xl bg-gray-100 dark:bg-dark-surface animate-pulse" />
+        <div className="flex-1 rounded-2xl bg-gray-100 dark:bg-dark-surface animate-pulse" />
+      </div>
+    );
+  }
 
   return (
     <motion.div variants={container} initial="hidden" animate="show" className="h-[calc(100vh-7rem)] flex gap-4">
@@ -67,6 +150,12 @@ export default function ChatPage() {
           </div>
         </div>
         <div className="flex-1 overflow-y-auto">
+          {filteredGroups.length === 0 && (
+            <div className="text-center py-8 px-4">
+              <Hash className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+              <p className="text-sm text-gray-500">No groups yet. Join one!</p>
+            </div>
+          )}
           {filteredGroups.map(group => (
             <button
               key={group.id}
@@ -117,8 +206,13 @@ export default function ChatPage() {
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-4">
-              {currentMessages.map(msg => {
-                const isOwn = msg.senderId === (user?.id || '2');
+              {messages.length === 0 && (
+                <div className="text-center py-8">
+                  <p className="text-sm text-gray-400">No messages yet. Start the conversation!</p>
+                </div>
+              )}
+              {messages.map(msg => {
+                const isOwn = msg.senderId === user?.id;
                 return (
                   <div key={msg.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
                     <div className={`max-w-[75%] ${isOwn ? 'order-2' : ''}`}>
@@ -131,8 +225,7 @@ export default function ChatPage() {
                         {msg.type === 'file' ? (
                           <div className="flex items-center gap-2">
                             <File className="w-4 h-4" />
-                            <span className="text-sm">{msg.content}</span>
-                            <span className="text-xs opacity-70">{msg.fileSize}</span>
+                            <span className="text-sm">{msg.fileName || msg.content}</span>
                           </div>
                         ) : (
                           <p className="text-sm">{msg.content}</p>
@@ -145,10 +238,11 @@ export default function ChatPage() {
                   </div>
                 );
               })}
+              <div ref={messagesEndRef} />
             </div>
 
             {/* Message Input */}
-            <form onSubmit={sendMessage} className="px-4 lg:px-6 py-4 border-t border-light-border dark:border-dark-border/50">
+            <form onSubmit={handleSendMessage} className="px-4 lg:px-6 py-4 border-t border-light-border dark:border-dark-border/50">
               <div className="flex items-center gap-3">
                 <button type="button" className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-hover text-gray-400">
                   <Paperclip className="w-5 h-5" />
@@ -189,10 +283,13 @@ export default function ChatPage() {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowJoin(false)}>
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-light-surface dark:bg-dark-card rounded-2xl border border-light-border dark:border-dark-border w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
               <h2 className="text-xl font-serif font-bold text-gray-900 dark:text-white mb-4">Join a Group</h2>
-              <input type="text" value={joinCode} onChange={e => setJoinCode(e.target.value)} placeholder="Enter join code (e.g., ALG-2026-XK9)" className="input-field font-mono mb-4" />
+              {joinError && <p className="text-sm text-red-500 mb-3">{joinError}</p>}
+              <input type="text" value={joinCode} onChange={e => setJoinCode(e.target.value)} placeholder="Enter join code (e.g., GRP-2026-XK9)" className="input-field font-mono mb-4" />
               <div className="flex gap-3">
-                <button onClick={() => setShowJoin(false)} className="btn-secondary flex-1">Cancel</button>
-                <button onClick={() => { setShowJoin(false); setJoinCode(''); }} className="btn-primary flex-1">Join Group</button>
+                <button onClick={() => { setShowJoin(false); setJoinError(''); }} className="btn-secondary flex-1">Cancel</button>
+                <button onClick={handleJoinGroup} disabled={joining} className="btn-primary flex-1">
+                  {joining ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto" /> : 'Join Group'}
+                </button>
               </div>
             </motion.div>
           </motion.div>

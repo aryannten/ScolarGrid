@@ -1,5 +1,8 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ANALYTICS, COMPLAINTS, LEADERBOARD } from '../../data/mockData';
+import { fetchAnalytics } from '../../services/analyticsService';
+import { fetchComplaints } from '../../services/complaintsService';
+import { fetchLeaderboard } from '../../services/leaderboardService';
 import { Users, FileText, Download, MessageSquare, AlertCircle, TrendingUp, ArrowUpRight, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -7,12 +10,49 @@ const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { st
 const item = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } };
 
 export default function AdminDashboard() {
-  const openComplaints = COMPLAINTS.filter(c => c.status === 'Open').length;
+  const [analytics, setAnalytics] = useState(null);
+  const [complaints, setComplaints] = useState([]);
+  const [leaderboard, setLeaderboard] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      const [a, c, lb] = await Promise.all([
+        fetchAnalytics(),
+        fetchComplaints(null, true),
+        fetchLeaderboard(5),
+      ]);
+      setAnalytics(a);
+      setComplaints(c);
+      setLeaderboard(lb);
+    } catch (err) {
+      console.error('Admin dashboard error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading || !analytics) {
+    return (
+      <div className="space-y-6">
+        <div className="h-8 w-48 rounded bg-gray-100 dark:bg-dark-surface animate-pulse" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1,2,3,4].map(i => <div key={i} className="h-28 rounded-2xl bg-gray-100 dark:bg-dark-surface animate-pulse" />)}
+        </div>
+      </div>
+    );
+  }
+
+  const openComplaints = complaints.filter(c => c.status === 'Open').length;
   const stats = [
-    { label: 'Total Users', value: ANALYTICS.totalUsers, change: '+12%', icon: Users, color: 'text-brand-500', bg: 'bg-brand-50 dark:bg-brand-900/20' },
-    { label: 'Total Notes', value: ANALYTICS.totalNotes, change: '+8%', icon: FileText, color: 'text-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
-    { label: 'Downloads', value: ANALYTICS.totalDownloads.toLocaleString(), change: '+24%', icon: Download, color: 'text-blue-500', bg: 'bg-blue-50 dark:bg-blue-900/20' },
-    { label: 'Open Issues', value: openComplaints, change: '-3', icon: AlertCircle, color: 'text-red-500', bg: 'bg-red-50 dark:bg-red-900/20' },
+    { label: 'Total Users', value: analytics.totalUsers, change: '+12%', icon: Users, color: 'text-brand-500', bg: 'bg-brand-50 dark:bg-brand-900/20' },
+    { label: 'Total Notes', value: analytics.totalNotes, change: '+8%', icon: FileText, color: 'text-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
+    { label: 'Downloads', value: analytics.totalDownloads.toLocaleString(), change: '+24%', icon: Download, color: 'text-blue-500', bg: 'bg-blue-50 dark:bg-blue-900/20' },
+    { label: 'Open Issues', value: openComplaints, change: `${analytics.resolvedComplaints} resolved`, icon: AlertCircle, color: 'text-red-500', bg: 'bg-red-50 dark:bg-red-900/20' },
   ];
 
   return (
@@ -33,15 +73,15 @@ export default function AdminDashboard() {
         ))}
       </motion.div>
 
-      {/* Charts Placeholder & Activity */}
+      {/* Charts & Activity */}
       <div className="grid lg:grid-cols-3 gap-6">
         <motion.div variants={item} className="lg:col-span-2 glass-card p-6">
           <h2 className="text-lg font-serif font-bold text-gray-900 dark:text-white mb-4">Activity Trends</h2>
           <div className="h-64 flex items-end justify-between gap-2 px-4">
-            {ANALYTICS.monthlyUploads.map((v, i) => (
+            {analytics.monthlyUploads.map((v, i) => (
               <div key={i} className="flex-1 flex flex-col items-center gap-1">
                 <motion.div
-                  initial={{ height: 0 }} animate={{ height: `${(v / 60) * 100}%` }}
+                  initial={{ height: 0 }} animate={{ height: `${(v / Math.max(...analytics.monthlyUploads, 1)) * 100}%` }}
                   transition={{ delay: i * 0.05, duration: 0.5 }}
                   className="w-full bg-gradient-to-t from-brand-500 to-brand-400 rounded-t-lg min-h-[4px] relative group cursor-pointer"
                 >
@@ -58,14 +98,14 @@ export default function AdminDashboard() {
             <h2 className="text-lg font-serif font-bold text-gray-900 dark:text-white">Top Subjects</h2>
           </div>
           <div className="space-y-3">
-            {ANALYTICS.topSubjects.map((s, i) => (
+            {analytics.topSubjects.map((s, i) => (
               <div key={s.subject}>
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-sm text-gray-700 dark:text-gray-300">{s.subject}</span>
                   <span className="text-xs text-gray-400">{s.count}</span>
                 </div>
                 <div className="h-2 bg-gray-100 dark:bg-dark-surface rounded-full overflow-hidden">
-                  <motion.div initial={{ width: 0 }} animate={{ width: `${(s.count / 50) * 100}%` }} transition={{ delay: 0.3 + i * 0.1 }}
+                  <motion.div initial={{ width: 0 }} animate={{ width: `${(s.count / Math.max(...analytics.topSubjects.map(x => x.count), 1)) * 100}%` }} transition={{ delay: 0.3 + i * 0.1 }}
                     className="h-full bg-gradient-to-r from-brand-400 to-brand-600 rounded-full" />
                 </div>
               </div>
@@ -82,16 +122,19 @@ export default function AdminDashboard() {
             <Link to="/admin/complaints" className="text-brand-500 text-sm font-medium flex items-center gap-1">View All <ArrowUpRight className="w-3 h-3" /></Link>
           </div>
           <div className="space-y-3">
-            {COMPLAINTS.filter(c => c.status !== 'Resolved').slice(0, 4).map(c => (
+            {complaints.filter(c => c.status !== 'Resolved').slice(0, 4).map(c => (
               <div key={c.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-dark-hover transition-colors">
                 <AlertCircle className={`w-5 h-5 flex-shrink-0 ${c.priority === 'High' ? 'text-red-500' : 'text-gold-500'}`} />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{c.title}</p>
-                  <p className="text-xs text-gray-400">{c.userName} · {c.category}</p>
+                  <p className="text-xs text-gray-400">{c.userName}</p>
                 </div>
                 <span className={`badge text-xs ${c.status === 'Open' ? 'badge-blue' : 'badge-gold'}`}>{c.status}</span>
               </div>
             ))}
+            {complaints.filter(c => c.status !== 'Resolved').length === 0 && (
+              <p className="text-sm text-gray-400 text-center py-4">No open complaints 🎉</p>
+            )}
           </div>
         </motion.div>
 
@@ -101,17 +144,20 @@ export default function AdminDashboard() {
             <Link to="/admin/users" className="text-brand-500 text-sm font-medium flex items-center gap-1">View All <ArrowUpRight className="w-3 h-3" /></Link>
           </div>
           <div className="space-y-3">
-            {LEADERBOARD.slice(0, 5).map((u, i) => (
+            {leaderboard.map((u, i) => (
               <div key={u.id} className="flex items-center gap-3 p-2">
                 <span className="text-sm font-bold text-gray-400 w-5">#{i + 1}</span>
                 <div className="w-8 h-8 rounded-full bg-gradient-premium flex items-center justify-center text-white text-xs font-bold">{u.name.charAt(0)}</div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 dark:text-white">{u.name}</p>
-                  <p className="text-xs text-gray-400">{u.uploads} uploads</p>
+                  <p className="text-xs text-gray-400">{u.tier}</p>
                 </div>
                 <span className="text-sm font-bold text-brand-500">{u.score}</span>
               </div>
             ))}
+            {leaderboard.length === 0 && (
+              <p className="text-sm text-gray-400 text-center py-4">No students yet</p>
+            )}
           </div>
         </motion.div>
       </div>

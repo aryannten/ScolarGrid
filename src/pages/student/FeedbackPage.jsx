@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { COMPLAINTS, COMPLAINT_CATEGORIES, PRIORITY_LEVELS } from '../../data/mockData';
 import { useAuth } from '../../context/AuthContext';
+import { fetchComplaints, createComplaint, subscribeToComplaints } from '../../services/complaintsService';
+import { supabase } from '../../lib/supabaseClient';
 import { MessageCircle, Plus, X, Clock, CheckCircle, AlertCircle, ChevronDown, Send, Bot } from 'lucide-react';
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.05 } } };
@@ -15,21 +16,70 @@ const statusConfig = {
 };
 
 export default function FeedbackPage() {
-  const { user } = useAuth();
-  const [complaints, setComplaints] = useState(COMPLAINTS);
+  const { user, isAdmin } = useAuth();
+  const [complaints, setComplaints] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [filter, setFilter] = useState('All');
-  const [form, setForm] = useState({ title: '', description: '', category: '', priority: 'Medium' });
+  const [form, setForm] = useState({ title: '', description: '' });
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    loadComplaints();
+
+    // Subscribe to realtime updates
+    const channel = subscribeToComplaints((updated) => {
+      setComplaints(prev =>
+        prev.map(c => c.id === updated.id ? updated : c)
+      );
+    });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const loadComplaints = async () => {
+    try {
+      const data = await fetchComplaints(user?.id, isAdmin);
+      setComplaints(data);
+    } catch (err) {
+      console.error('Error loading complaints:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filtered = complaints.filter(c => filter === 'All' || c.status === filter);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const nc = { id: String(Date.now()), userId: user?.id || '2', userName: user?.name || 'User', ...form, status: 'Open', createdAt: new Date().toISOString(), resolvedAt: null, adminResponse: null };
-    setComplaints([nc, ...complaints]);
-    setShowForm(false);
-    setForm({ title: '', description: '', category: '', priority: 'Medium' });
+    if (!user) return;
+    setSubmitting(true);
+    try {
+      const nc = await createComplaint(user.id, {
+        title: form.title,
+        description: form.description,
+      });
+      setComplaints([nc, ...complaints]);
+      setShowForm(false);
+      setForm({ title: '', description: '' });
+    } catch (err) {
+      console.error('Error creating complaint:', err);
+      alert('Failed to submit complaint: ' + err.message);
+    } finally {
+      setSubmitting(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="h-8 w-48 rounded bg-gray-100 dark:bg-dark-surface animate-pulse" />
+        {[1,2,3].map(i => <div key={i} className="h-32 rounded-2xl bg-gray-100 dark:bg-dark-surface animate-pulse" />)}
+      </div>
+    );
+  }
 
   return (
     <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
@@ -57,11 +107,9 @@ export default function FeedbackPage() {
             <div className="flex items-center gap-2 mb-1">
               <h3 className="font-semibold text-gray-900 dark:text-white">{c.title}</h3>
               <span className={statusConfig[c.status]?.badge || 'badge-gray'}>{c.status}</span>
-              <span className={`badge ${c.priority === 'High' ? 'badge-red' : 'badge-gray'}`}>{c.priority}</span>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{c.description}</p>
             <div className="flex items-center gap-4 text-xs text-gray-400">
-              <span className="badge-purple">{c.category}</span>
               <span>{new Date(c.createdAt).toLocaleDateString()}</span>
             </div>
             {c.adminResponse && (
@@ -86,18 +134,11 @@ export default function FeedbackPage() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <input type="text" value={form.title} onChange={e => setForm({...form, title: e.target.value})} placeholder="Brief title" className="input-field" required />
                 <textarea value={form.description} onChange={e => setForm({...form, description: e.target.value})} placeholder="Describe your issue..." className="input-field min-h-[100px] resize-none" required />
-                <div className="grid grid-cols-2 gap-3">
-                  <select value={form.category} onChange={e => setForm({...form, category: e.target.value})} className="input-field" required>
-                    <option value="">Category</option>
-                    {COMPLAINT_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                  <select value={form.priority} onChange={e => setForm({...form, priority: e.target.value})} className="input-field">
-                    {PRIORITY_LEVELS.map(p => <option key={p} value={p}>{p}</option>)}
-                  </select>
-                </div>
                 <div className="flex gap-3 pt-2">
                   <button type="button" onClick={() => setShowForm(false)} className="btn-secondary flex-1">Cancel</button>
-                  <button type="submit" className="btn-primary flex-1 flex items-center justify-center gap-2"><Send className="w-4 h-4" /> Submit</button>
+                  <button type="submit" disabled={submitting} className="btn-primary flex-1 flex items-center justify-center gap-2">
+                    {submitting ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><Send className="w-4 h-4" /> Submit</>}
+                  </button>
                 </div>
               </form>
             </motion.div>

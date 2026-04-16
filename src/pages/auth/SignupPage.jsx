@@ -28,7 +28,11 @@ export default function SignupPage() {
     }
     const result = await signup(name, email, password, role);
     if (result.success) {
-      navigate(result.user.role === 'admin' ? '/admin/dashboard' : '/dashboard');
+      if (result.needsConfirmation) {
+        navigate('/auth/confirm-email', { state: { email } });
+      } else {
+        navigate(result.user.role === 'admin' ? '/admin/dashboard' : '/dashboard');
+      }
     } else {
       setError(result.error);
     }

@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-import { User, Mail, Edit3, Save, Sun, Moon, Upload, Star, FileText, Download, Calendar, Award } from 'lucide-react';
+import { uploadAvatar } from '../../services/storageService';
+import { User, Mail, Edit3, Save, Sun, Moon, Upload, Star, FileText, Download, Calendar, Award, Camera } from 'lucide-react';
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.06 } } };
 const item = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } };
@@ -12,17 +13,41 @@ export default function ProfilePage() {
   const { isDark, toggleTheme } = useTheme();
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({ name: user?.name || '', about: user?.about || '' });
+  const [saving, setSaving] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
-  const handleSave = () => {
-    updateProfile(form);
-    setEditing(false);
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await updateProfile(form);
+      setEditing(false);
+    } catch (err) {
+      console.error('Profile update error:', err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file || !user) return;
+    setUploadingAvatar(true);
+    try {
+      const avatarUrl = await uploadAvatar(user.id, file);
+      await updateProfile({ avatar: avatarUrl });
+    } catch (err) {
+      console.error('Avatar upload error:', err);
+      alert('Failed to upload avatar: ' + err.message);
+    } finally {
+      setUploadingAvatar(false);
+    }
   };
 
   const stats = [
     { label: 'Uploads', value: user?.uploads || 0, icon: Upload },
     { label: 'Downloads', value: user?.downloads || 0, icon: Download },
-    { label: 'Avg Rating', value: '4.7', icon: Star },
-    { label: 'Score', value: user?.score || 0, icon: Award },
+    { label: 'Points', value: user?.score || 0, icon: Star },
+    { label: 'Tier', value: user?.tier || 'Bronze', icon: Award },
   ];
 
   return (
@@ -32,8 +57,22 @@ export default function ProfilePage() {
       {/* Profile Card */}
       <motion.div variants={item} className="glass-card p-6">
         <div className="flex items-start gap-5">
-          <div className="w-20 h-20 rounded-2xl bg-gradient-premium flex items-center justify-center text-white text-3xl font-serif font-bold shadow-glow">
-            {user?.name?.charAt(0) || 'S'}
+          <div className="relative group">
+            {user?.avatar ? (
+              <img src={user.avatar} alt="Avatar" className="w-20 h-20 rounded-2xl object-cover shadow-glow" />
+            ) : (
+              <div className="w-20 h-20 rounded-2xl bg-gradient-premium flex items-center justify-center text-white text-3xl font-serif font-bold shadow-glow">
+                {user?.name?.charAt(0) || 'S'}
+              </div>
+            )}
+            <label className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+              <input type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
+              {uploadingAvatar ? (
+                <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <Camera className="w-6 h-6 text-white" />
+              )}
+            </label>
           </div>
           <div className="flex-1">
             {editing ? (
@@ -41,7 +80,10 @@ export default function ProfilePage() {
                 <input type="text" value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="input-field" placeholder="Full name" />
                 <textarea value={form.about} onChange={e => setForm({...form, about: e.target.value})} className="input-field resize-none" rows={2} placeholder="About you" />
                 <div className="flex gap-2">
-                  <button onClick={handleSave} className="btn-primary flex items-center gap-2 text-sm"><Save className="w-4 h-4" /> Save</button>
+                  <button onClick={handleSave} disabled={saving} className="btn-primary flex items-center gap-2 text-sm">
+                    {saving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save className="w-4 h-4" />}
+                    Save
+                  </button>
                   <button onClick={() => setEditing(false)} className="btn-secondary text-sm">Cancel</button>
                 </div>
               </div>
