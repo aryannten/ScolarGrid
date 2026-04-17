@@ -32,7 +32,7 @@ export default function SignupPage() {
       if (result.needsConfirmation) {
         navigate('/auth/confirm-email', { state: { email } });
       } else {
-        navigate(['superadmin', 'faculty'].includes(result.user.role) ? '/admin/dashboard' : '/dashboard');
+        navigate(['superadmin', 'faculty'].includes(result.user.role) ? '/management/dashboard' : '/dashboard');
       }
     } else {
       setError(result.error);

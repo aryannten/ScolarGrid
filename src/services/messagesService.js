@@ -1,4 +1,4 @@
-import { apiGet, apiPost } from '../lib/apiClient';
+import { apiGet, apiPost, apiDelete } from '../lib/apiClient';
 
 /**
  * Fetch messages for a group, ordered by time.
@@ -59,4 +59,11 @@ export function subscribeToMessages(groupId, onNewMessage) {
     close: () => ws.close(),
     unsubscribe: () => ws.close(),
   };
+}
+
+/**
+ * Delete a message
+ */
+export async function deleteMessage(messageId) {
+  return await apiDelete(`/api/messages/${messageId}`);
 }

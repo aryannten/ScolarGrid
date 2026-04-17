@@ -7,55 +7,47 @@ const { v4: uuidv4 } = require('uuid');
 // POST /api/auth/signup
 router.post('/signup', async (req, res) => {
   try {
-    const db = req.app.locals.db;
+    const { store, saveToDisk } = req.app.locals;
     const { name, email, password, role } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
-    // Check if email already exists
-    const [existing] = await db.query('SELECT id FROM profiles WHERE email = ?', [email]);
-    if (existing.length > 0) {
+    const existing = store.profiles.find(p => p.email === email);
+    if (existing) {
       return res.status(409).json({ error: 'Email already registered' });
     }
 
     const id = uuidv4();
-    const passwordHash = await bcrypt.hash(password, 10);
+    const password_hash = await bcrypt.hash(password, 10);
     const userRole = role || 'student';
+    const now = new Date().toISOString();
 
     if (userRole === 'faculty') {
       const { faculty_code } = req.body;
       if (!faculty_code) {
         return res.status(400).json({ error: 'Faculty code is required for faculty registration' });
       }
-      const [codes] = await db.query('SELECT * FROM faculty_codes WHERE code = ? AND is_used = 0', [faculty_code]);
-      if (codes.length === 0) {
+      const codeEntry = store.faculty_codes.find(c => c.code === faculty_code && !c.is_used);
+      if (!codeEntry) {
         return res.status(400).json({ error: 'Invalid or already used faculty code' });
       }
-      
-      await db.query(
-        `INSERT INTO profiles (id, email, password_hash, full_name, role) VALUES (?, ?, ?, ?, ?)`,
-        [id, email, passwordHash, name || '', userRole]
-      );
-      
-      await db.query('UPDATE faculty_codes SET is_used = 1, used_by = ? WHERE code = ?', [id, faculty_code]);
-    } else {
-      await db.query(
-        `INSERT INTO profiles (id, email, password_hash, full_name, role) VALUES (?, ?, ?, ?, ?)`,
-        [id, email, passwordHash, name || '', userRole]
-      );
+      codeEntry.is_used = 1;
+      codeEntry.used_by = id;
     }
+
+    const profile = {
+      id, email, password_hash, full_name: name || '', role: userRole,
+      about: '', avatar_url: null, points: 0, warnings: 0, is_banned: 0,
+      created_at: now, updated_at: now,
+    };
+    store.profiles.push(profile);
+    saveToDisk();
 
     const token = jwt.sign({ id, role: userRole }, req.app.locals.JWT_SECRET, { expiresIn: '7d' });
 
-    const [rows] = await db.query('SELECT * FROM profiles WHERE id = ?', [id]);
-    const profile = rows[0];
-
-    res.status(201).json({
-      token,
-      user: mapProfile(profile),
-    });
+    res.status(201).json({ token, user: mapProfile(profile) });
   } catch (err) {
     console.error('Signup error:', err);
     res.status(500).json({ error: 'Internal server error' });
@@ -65,19 +57,17 @@ router.post('/signup', async (req, res) => {
 // POST /api/auth/login
 router.post('/login', async (req, res) => {
   try {
-    const db = req.app.locals.db;
+    const { store } = req.app.locals;
     const { email, password } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
-    const [rows] = await db.query('SELECT * FROM profiles WHERE email = ?', [email]);
-    if (rows.length === 0) {
+    const profile = store.profiles.find(p => p.email === email);
+    if (!profile) {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
-
-    const profile = rows[0];
 
     if (profile.is_banned) {
       return res.status(403).json({ error: 'Your account has been banned' });
@@ -94,10 +84,7 @@ router.post('/login', async (req, res) => {
       { expiresIn: '7d' }
     );
 
-    res.json({
-      token,
-      user: mapProfile(profile),
-    });
+    res.json({ token, user: mapProfile(profile) });
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ error: 'Internal server error' });
@@ -105,49 +92,31 @@ router.post('/login', async (req, res) => {
 });
 
 // GET /api/auth/me
-router.get('/me', req_app_locals_auth(), async (req, res) => {
+router.get('/me', (req, res, next) => req.app.locals.authenticateJWT(req, res, next), (req, res) => {
   try {
-    const db = req.app.locals.db;
-    const [rows] = await db.query('SELECT * FROM profiles WHERE id = ?', [req.user.id]);
-    if (rows.length === 0) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    res.json({ user: mapProfile(rows[0]) });
+    const { store } = req.app.locals;
+    const profile = store.profiles.find(p => p.id === req.user.id);
+    if (!profile) return res.status(404).json({ error: 'User not found' });
+    res.json({ user: mapProfile(profile) });
   } catch (err) {
     console.error('Me error:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// Middleware helper — returns the authenticateJWT function
-function req_app_locals_auth() {
-  return (req, res, next) => {
-    return req.app.locals.authenticateJWT(req, res, next);
-  };
-}
-
 function mapProfile(row) {
-  const getTier = (points) => {
-    if (points >= 3000) return 'Elite';
-    if (points >= 2000) return 'Gold';
-    if (points >= 1000) return 'Silver';
+  const getTier = (pts) => {
+    if (pts >= 3000) return 'Elite';
+    if (pts >= 2000) return 'Gold';
+    if (pts >= 1000) return 'Silver';
     return 'Bronze';
   };
-
   return {
-    id: row.id,
-    name: row.full_name || '',
-    email: row.email,
-    role: row.role,
-    avatar: row.avatar_url,
-    about: row.about || '',
-    joinedAt: row.created_at ? new Date(row.created_at).toISOString().split('T')[0] : '',
-    score: row.points || 0,
-    points: row.points || 0,
-    tier: getTier(row.points || 0),
-    uploads: 0,
-    downloads: 0,
-    warnings: row.warnings || 0,
+    id: row.id, name: row.full_name || '', email: row.email, role: row.role,
+    avatar: row.avatar_url, about: row.about || '',
+    joinedAt: row.created_at ? row.created_at.split('T')[0] : '',
+    score: row.points || 0, points: row.points || 0, tier: getTier(row.points || 0),
+    uploads: 0, downloads: 0, warnings: row.warnings || 0,
     is_banned: row.is_banned ? true : false,
   };
 }

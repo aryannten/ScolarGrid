@@ -2,14 +2,14 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { fetchUserGroups, joinGroup } from '../../services/groupsService';
-import { fetchMessages, sendMessage, subscribeToMessages } from '../../services/messagesService';
+import { fetchMessages, sendMessage, subscribeToMessages, deleteMessage } from '../../services/messagesService';
 
-import { Search, Send, Paperclip, Hash, Users, Clock, Plus, X, Copy, Check, File } from 'lucide-react';
+import { Search, Send, Paperclip, Hash, Users, Clock, Plus, X, Copy, Check, File, Trash2 } from 'lucide-react';
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.05 } } };
 
 export default function ChatPage() {
-  const { user } = useAuth();
+  const { user, isFaculty, isSuperAdmin } = useAuth();
   const [groups, setGroups] = useState([]);
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -50,6 +50,10 @@ export default function ChatPage() {
       channelRef.current.close();
     }
     channelRef.current = subscribeToMessages(selectedGroup.id, (newMsg) => {
+      if (newMsg.deleted) {
+         setMessages(prev => prev.filter(m => m.id !== newMsg.id));
+         return;
+      }
       setMessages(prev => {
         // Avoid duplicates
         if (prev.find(m => m.id === newMsg.id)) return prev;
@@ -94,6 +98,17 @@ export default function ChatPage() {
     } catch (err) {
       console.error('Error sending message:', err);
       setNewMessage(content); // Restore on error
+    }
+  };
+
+  const handleDeleteMessage = async (msgId) => {
+    if (!confirm('Delete this message?')) return;
+    try {
+      await deleteMessage(msgId);
+      setMessages(prev => prev.filter(m => m.id !== msgId));
+    } catch (err) {
+      console.error('Failed to delete message', err);
+      alert('Failed to delete message: ' + err.message);
     }
   };
 
@@ -213,22 +228,35 @@ export default function ChatPage() {
               )}
               {messages.map(msg => {
                 const isOwn = msg.senderId === user?.id;
+                const canDelete = isOwn || isFaculty || isSuperAdmin;
                 return (
-                  <div key={msg.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
+                  <div key={msg.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'} group/msg`}>
                     <div className={`max-w-[75%] ${isOwn ? 'order-2' : ''}`}>
                       {!isOwn && <p className="text-xs font-semibold text-brand-500 mb-1 ml-1">{msg.senderName}</p>}
-                      <div className={`px-4 py-2.5 rounded-2xl ${
-                        isOwn
-                          ? 'bg-brand-500 text-white rounded-tr-sm'
-                          : 'bg-gray-100 dark:bg-dark-hover text-gray-800 dark:text-gray-200 rounded-tl-sm'
-                      }`}>
-                        {msg.type === 'file' ? (
-                          <div className="flex items-center gap-2">
-                            <File className="w-4 h-4" />
-                            <span className="text-sm">{msg.fileName || msg.content}</span>
-                          </div>
-                        ) : (
-                          <p className="text-sm">{msg.content}</p>
+                      <div className="flex items-center gap-2">
+                        {isOwn && canDelete && (
+                           <button onClick={() => handleDeleteMessage(msg.id)} className="opacity-0 group-hover/msg:opacity-100 p-1.5 text-gray-400 hover:text-red-500 transition-all rounded-lg hover:bg-red-50 dark:hover:bg-red-900/10" title="Delete message">
+                             <Trash2 className="w-4 h-4" />
+                           </button>
+                        )}
+                        <div className={`px-4 py-2.5 rounded-2xl ${
+                          isOwn
+                            ? 'bg-brand-500 text-white rounded-tr-sm'
+                            : 'bg-gray-100 dark:bg-dark-hover text-gray-800 dark:text-gray-200 rounded-tl-sm'
+                        }`}>
+                          {msg.type === 'file' ? (
+                            <div className="flex items-center gap-2">
+                              <File className="w-4 h-4" />
+                              <span className="text-sm">{msg.fileName || msg.content}</span>
+                            </div>
+                          ) : (
+                            <p className="text-sm">{msg.content}</p>
+                          )}
+                        </div>
+                        {!isOwn && canDelete && (
+                           <button onClick={() => handleDeleteMessage(msg.id)} className="opacity-0 group-hover/msg:opacity-100 p-1.5 text-gray-400 hover:text-red-500 transition-all rounded-lg hover:bg-red-50 dark:hover:bg-red-900/10" title="Delete message">
+                             <Trash2 className="w-4 h-4" />
+                           </button>
                         )}
                       </div>
                       <p className={`text-xs text-gray-400 mt-1 ${isOwn ? 'text-right mr-1' : 'ml-1'}`}>

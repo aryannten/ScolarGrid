@@ -2,126 +2,80 @@ const express = require('express');
 const router = express.Router();
 const { v4: uuidv4 } = require('uuid');
 
-function auth() {
-  return (req, res, next) => req.app.locals.authenticateJWT(req, res, next);
-}
-function superadmin() {
-  return (req, res, next) => req.app.locals.requireSuperAdmin(req, res, next);
-}
-function roles(r) {
-  return (req, res, next) => req.app.locals.requireRoles(r)(req, res, next);
-}
+function auth() { return (req, res, next) => req.app.locals.authenticateJWT(req, res, next); }
+function roles(r) { return (req, res, next) => req.app.locals.requireRoles(r)(req, res, next); }
 
-// GET /api/groups — user's groups or all (admin)
-router.get('/', auth(), async (req, res) => {
+// GET /api/groups
+router.get('/', auth(), (req, res) => {
   try {
-    const db = req.app.locals.db;
-    let rows;
+    const { store } = req.app.locals;
+    let groups;
 
-    if (req.user.role === 'superadmin') {
-      [rows] = await db.query('SELECT * FROM `groups` ORDER BY created_at DESC');
+    if (['superadmin', 'faculty'].includes(req.user.role)) {
+      groups = [...store.groups];
     } else {
-      [rows] = await db.query(
-        `SELECT g.* FROM \`groups\` g
-         INNER JOIN group_members gm ON g.id = gm.group_id
-         WHERE gm.user_id = ?
-         ORDER BY g.created_at DESC`,
-        [req.user.id]
-      );
+      const memberGroupIds = store.group_members.filter(gm => gm.user_id === req.user.id).map(gm => gm.group_id);
+      groups = store.groups.filter(g => memberGroupIds.includes(g.id));
     }
 
-    // Enrich with member counts and last messages
-    const groups = await Promise.all(rows.map(async (g) => {
-      const [[{ cnt }]] = await db.query(
-        'SELECT COUNT(*) AS cnt FROM group_members WHERE group_id = ?', [g.id]
-      );
-      const [msgs] = await db.query(
-        'SELECT content, created_at FROM messages WHERE group_id = ? ORDER BY created_at DESC LIMIT 1', [g.id]
-      );
-      return mapGroup(g, cnt, msgs[0] || null);
-    }));
+    groups.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
-    res.json(groups);
-  } catch (err) {
-    console.error('Fetch groups error:', err);
-    res.status(500).json({ error: 'Internal server error' });
-  }
+    const enriched = groups.map(g => {
+      const memberCount = store.group_members.filter(gm => gm.group_id === g.id).length;
+      const groupMsgs = store.messages.filter(m => m.group_id === g.id).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      const lastMsg = groupMsgs[0] || null;
+      return mapGroup(g, memberCount, lastMsg);
+    });
+
+    res.json(enriched);
+  } catch (err) { console.error('Fetch groups error:', err); res.status(500).json({ error: 'Internal server error' }); }
 });
 
-// POST /api/groups — create group (superadmin or faculty)
-router.post('/', auth(), roles(['superadmin', 'faculty']), async (req, res) => {
+// POST /api/groups
+router.post('/', auth(), roles(['superadmin', 'faculty']), (req, res) => {
   try {
-    const db = req.app.locals.db;
+    const { store, saveToDisk } = req.app.locals;
     const { name, description } = req.body;
     const id = uuidv4();
     const joinCode = generateJoinCode();
+    const now = new Date().toISOString();
 
-    await db.query(
-      'INSERT INTO `groups` (id, name, description, join_code, created_by) VALUES (?, ?, ?, ?, ?)',
-      [id, name, description || null, joinCode, req.user.id]
-    );
+    const group = { id, name, description: description || '', join_code: joinCode, created_by: req.user.id, created_at: now };
+    store.groups.push(group);
+    store.group_members.push({ group_id: id, user_id: req.user.id, joined_at: now });
+    saveToDisk();
 
-    // Auto-add creator as member
-    await db.query(
-      'INSERT INTO group_members (group_id, user_id) VALUES (?, ?)',
-      [id, req.user.id]
-    );
-
-    const [rows] = await db.query('SELECT * FROM `groups` WHERE id = ?', [id]);
-    res.status(201).json(mapGroup(rows[0], 1, null));
-  } catch (err) {
-    console.error('Create group error:', err);
-    res.status(500).json({ error: 'Internal server error' });
-  }
+    res.status(201).json(mapGroup(group, 1, null));
+  } catch (err) { console.error('Create group error:', err); res.status(500).json({ error: 'Internal server error' }); }
 });
 
-// DELETE /api/groups/:id (superadmin or faculty)
-router.delete('/:id', auth(), roles(['superadmin', 'faculty']), async (req, res) => {
+// DELETE /api/groups/:id
+router.delete('/:id', auth(), roles(['superadmin', 'faculty']), (req, res) => {
   try {
-    const db = req.app.locals.db;
-    await db.query('DELETE FROM `groups` WHERE id = ?', [req.params.id]);
+    const { store, saveToDisk } = req.app.locals;
+    store.groups = store.groups.filter(g => g.id !== req.params.id);
+    store.group_members = store.group_members.filter(gm => gm.group_id !== req.params.id);
+    store.messages = store.messages.filter(m => m.group_id !== req.params.id);
+    saveToDisk();
     res.json({ success: true });
-  } catch (err) {
-    console.error('Delete group error:', err);
-    res.status(500).json({ error: 'Internal server error' });
-  }
+  } catch (err) { console.error('Delete group error:', err); res.status(500).json({ error: 'Internal server error' }); }
 });
 
-// POST /api/groups/join — join by code
-router.post('/join', auth(), async (req, res) => {
+// POST /api/groups/join
+router.post('/join', auth(), (req, res) => {
   try {
-    const db = req.app.locals.db;
+    const { store, saveToDisk } = req.app.locals;
     const { joinCode } = req.body;
+    const group = store.groups.find(g => g.join_code === joinCode.trim().toUpperCase());
+    if (!group) return res.status(404).json({ error: 'Invalid join code. Group not found.' });
 
-    const [groups] = await db.query(
-      'SELECT id, name FROM `groups` WHERE join_code = ?',
-      [joinCode.trim().toUpperCase()]
-    );
-    if (groups.length === 0) {
-      return res.status(404).json({ error: 'Invalid join code. Group not found.' });
-    }
+    const existing = store.group_members.find(gm => gm.group_id === group.id && gm.user_id === req.user.id);
+    if (existing) return res.status(409).json({ error: 'You are already a member of this group.' });
 
-    const group = groups[0];
-
-    // Check if already a member
-    const [existing] = await db.query(
-      'SELECT group_id FROM group_members WHERE group_id = ? AND user_id = ?',
-      [group.id, req.user.id]
-    );
-    if (existing.length > 0) {
-      return res.status(409).json({ error: 'You are already a member of this group.' });
-    }
-
-    await db.query(
-      'INSERT INTO group_members (group_id, user_id) VALUES (?, ?)',
-      [group.id, req.user.id]
-    );
-
+    store.group_members.push({ group_id: group.id, user_id: req.user.id, joined_at: new Date().toISOString() });
+    saveToDisk();
     res.json(group);
-  } catch (err) {
-    console.error('Join group error:', err);
-    res.status(500).json({ error: 'Internal server error' });
-  }
+  } catch (err) { console.error('Join group error:', err); res.status(500).json({ error: 'Internal server error' }); }
 });
 
 function generateJoinCode() {
@@ -129,21 +83,15 @@ function generateJoinCode() {
   const prefixes = ['GRP', 'STD', 'DSC'];
   const pfx = prefixes[Math.floor(Math.random() * prefixes.length)];
   let code = '';
-  for (let i = 0; i < 3; i++) {
-    code += chars[Math.floor(Math.random() * chars.length)];
-  }
+  for (let i = 0; i < 3; i++) code += chars[Math.floor(Math.random() * chars.length)];
   return `${pfx}-2026-${code}`;
 }
 
 function mapGroup(g, memberCount, lastMsg) {
   return {
-    id: g.id,
-    name: g.name,
-    description: g.description || '',
-    joinCode: g.join_code,
-    members: memberCount,
-    createdBy: g.created_by,
-    createdAt: g.created_at ? new Date(g.created_at).toISOString().split('T')[0] : '',
+    id: g.id, name: g.name, description: g.description || '', joinCode: g.join_code,
+    members: memberCount, createdBy: g.created_by,
+    createdAt: g.created_at ? g.created_at.split('T')[0] : '',
     lastMessage: lastMsg?.content || 'No messages yet',
     lastMessageAt: lastMsg?.created_at || g.created_at,
   };

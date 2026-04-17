@@ -12,7 +12,7 @@ const getLinks = (isSuperAdmin) => [
   { to: '/management/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/management/groups', icon: MessageSquare, label: 'Chat Groups' },
   { to: '/management/notes', icon: FileText, label: 'Notes' },
-  ...(isSuperAdmin ? [{ to: '/management/users', icon: Users, label: 'Users' }] : []),
+  { to: '/management/users', icon: Users, label: 'Users' },
   { to: '/management/complaints', icon: AlertCircle, label: 'Complaints' },
   { to: '/management/analytics', icon: BarChart3, label: 'Analytics' },
 ];

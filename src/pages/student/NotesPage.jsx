@@ -23,6 +23,12 @@ export default function NotesPage() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
 
+  // Review Modal state
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewNoteId, setReviewNoteId] = useState(null);
+  const [reviewScore, setReviewScore] = useState(5);
+  const [reviewText, setReviewText] = useState('');
+
   useEffect(() => {
     loadNotes();
     loadSubjects();
@@ -84,23 +90,35 @@ export default function NotesPage() {
     }
   };
 
-  const handleRate = async (noteId) => {
-    const ratingStr = prompt('Enter a rating from 1 to 5:');
-    if (!ratingStr) return;
-    const rating = parseInt(ratingStr);
-    if (isNaN(rating) || rating < 1 || rating > 5) {
-      return alert('Rating must be a number between 1 and 5');
-    }
-    const review = prompt('Enter an optional review:');
-
+  const handleDownload = async (id, fileUrl) => {
     try {
-      await rateNote(noteId, rating, review);
-      // Optimistically update rating (simplified)
-      setNotes(notes.map(n => n.id === noteId ? { ...n, rating, totalRatings: n.totalRatings + 1 } : n));
-      alert('Rating submitted successfully!');
+      const token = localStorage.getItem('sg_token');
+      const res = await fetch(`/api/notes/${id}/download`, {
+        headers: { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) }
+      });
+      if (res.ok) {
+        setNotes(notes.map(n => n.id === id ? { ...n, downloads: n.downloads + 1 } : n));
+      }
+      const link = document.createElement('a');
+      link.href = fileUrl;
+      link.download = '';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     } catch (err) {
-      console.error('Rate note error:', err);
-      alert('Failed to rate note: ' + err.message);
+      console.error('Download error', err);
+    }
+  };
+
+  const submitReview = async () => {
+    if (!reviewNoteId) return;
+    try {
+      await rateNote(reviewNoteId, reviewScore, reviewText);
+      setNotes(notes.map(n => n.id === reviewNoteId ? { ...n, rating: reviewScore, totalRatings: n.totalRatings + 1 } : n));
+      setShowReviewModal(false);
+      setReviewText('');
+    } catch (err) {
+      alert('Failed to submit review: ' + err.message);
     }
   };
 
@@ -142,6 +160,7 @@ export default function NotesPage() {
           </div>
           <div className="relative">
             <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="input-field pr-10 appearance-none cursor-pointer min-w-[130px]">
+              <option value="top-rated">Top Rated</option>
               <option value="recent">Most Recent</option>
               <option value="downloads">Most Downloaded</option>
             </select>
@@ -197,12 +216,12 @@ export default function NotesPage() {
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-gray-500">{note.subject}</span>
                   <div className="flex items-center gap-3">
-                    <button onClick={() => handleRate(note.id)} className="flex items-center gap-1 text-xs text-gray-400 hover:text-gold-500 transition-colors" title="Rate this note">
+                    <button onClick={() => { setReviewNoteId(note.id); setShowReviewModal(true); }} className="flex items-center gap-1 text-xs text-gray-400 hover:text-gold-500 transition-colors" title="Rate this note">
                       {renderStars(note.rating)}
                     </button>
-                    <div className="flex items-center gap-1 text-xs text-gray-400">
+                    <button onClick={() => handleDownload(note.id, note.fileUrl)} className="flex items-center gap-1 text-xs text-gray-400 hover:text-brand-500 transition-colors cursor-pointer" title="Download">
                       <Download className="w-3 h-3" /> {note.downloads}
-                    </div>
+                    </button>
                   </div>
                 </div>
                 <div className="flex items-center justify-between mt-2 text-xs text-gray-400">
@@ -238,16 +257,37 @@ export default function NotesPage() {
                 </div>
               </div>
               <div className="hidden sm:flex items-center gap-4 flex-shrink-0">
-                <button onClick={() => handleRate(note.id)} className="flex items-center gap-1 text-xs text-gray-400 hover:text-gold-500 transition-colors" title="Rate this note">
+                <button onClick={() => { setReviewNoteId(note.id); setShowReviewModal(true); }} className="flex items-center gap-1 text-xs text-gray-400 hover:text-gold-500 transition-colors" title="Rate this note">
                   {renderStars(note.rating)}
                 </button>
                 <div className="flex items-center gap-1 text-sm text-gray-500"><Download className="w-4 h-4" /> {note.downloads}</div>
-                <button className="btn-secondary text-sm py-1.5 px-3">Download</button>
+                <button onClick={() => handleDownload(note.id, note.fileUrl)} className="btn-secondary text-sm py-1.5 px-3">Download</button>
               </div>
             </motion.div>
           ))}
         </motion.div>
       ) : null}
+
+      {/* Review Modal */}
+      <AnimatePresence>
+        {showReviewModal && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+            <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} className="bg-light-surface dark:bg-dark-card rounded-2xl p-6 w-full max-w-sm">
+              <h3 className="text-lg font-bold mb-4">Rate Note</h3>
+              <div className="flex gap-2 justify-center mb-6">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star key={star} onClick={() => setReviewScore(star)} className={`w-8 h-8 cursor-pointer transition-colors ${star <= reviewScore ? 'text-gold-400 fill-gold-400' : 'text-gray-300 dark:text-gray-600 hover:text-gold-200'}`} />
+                ))}
+              </div>
+              <textarea value={reviewText} onChange={(e) => setReviewText(e.target.value)} placeholder="Write an optional review..." className="input-field min-h-[80px] mb-4 text-sm" />
+              <div className="flex gap-3">
+                <button onClick={() => setShowReviewModal(false)} className="btn-secondary flex-1">Cancel</button>
+                <button onClick={submitReview} className="btn-primary flex-1">Submit</button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Upload Modal */}
       <AnimatePresence>

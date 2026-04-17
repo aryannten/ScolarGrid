@@ -1,0 +1,411 @@
+{
+  "profiles": [
+    {
+      "id": "a0000000-0000-0000-0000-000000000001",
+      "email": "admin@scholargrid.com",
+      "password_hash": "$2a$10$NDXChV7.I.HCUVBQpfl4J.U.NF5gIZ6F3eOHXuC0xX3HMTcsMnTJq",
+      "full_name": "Super Admin User",
+      "role": "superadmin",
+      "about": "Platform administrator",
+      "avatar_url": null,
+      "points": 0,
+      "warnings": 0,
+      "is_banned": 0,
+      "created_at": "2026-04-17T18:34:20.710Z",
+      "updated_at": "2026-04-17T18:34:20.710Z"
+    },
+    {
+      "id": "f0000000-0000-0000-0000-000000000001",
+      "email": "faculty@scholargrid.com",
+      "password_hash": "$2a$10$pB57YMStAjqVuXB/mInMse2i19/k6F/76Qvtr8nBTQ9PtZBeKSl3a",
+      "full_name": "Faculty User",
+      "role": "faculty",
+      "about": "Computer Science Professor",
+      "avatar_url": null,
+      "points": 0,
+      "warnings": 0,
+      "is_banned": 0,
+      "created_at": "2026-04-17T18:34:20.710Z",
+      "updated_at": "2026-04-17T18:34:20.710Z"
+    },
+    {
+      "id": "s0000000-0000-0000-0000-000000000001",
+      "email": "alice@student.com",
+      "password_hash": "$2a$10$MhS3f/yqw4W/HJhjA7gCauAwYLr/CTSKJsSIkhQh2HwStcu/NC0i6",
+      "full_name": "Alice Johnson",
+      "role": "student",
+      "about": "Computer Science major",
+      "avatar_url": null,
+      "points": 150,
+      "warnings": 0,
+      "is_banned": 0,
+      "created_at": "2026-04-17T18:34:20.710Z",
+      "updated_at": "2026-04-17T18:34:20.710Z"
+    },
+    {
+      "id": "s0000000-0000-0000-0000-000000000002",
+      "email": "bob@student.com",
+      "password_hash": "$2a$10$MhS3f/yqw4W/HJhjA7gCauAwYLr/CTSKJsSIkhQh2HwStcu/NC0i6",
+      "full_name": "Bob Smith",
+      "role": "student",
+      "about": "Mathematics enthusiast",
+      "avatar_url": null,
+      "points": 230,
+      "warnings": 0,
+      "is_banned": 0,
+      "created_at": "2026-04-17T18:34:20.710Z",
+      "updated_at": "2026-04-17T18:34:20.710Z"
+    },
+    {
+      "id": "s0000000-0000-0000-0000-000000000003",
+      "email": "carol@student.com",
+      "password_hash": "$2a$10$MhS3f/yqw4W/HJhjA7gCauAwYLr/CTSKJsSIkhQh2HwStcu/NC0i6",
+      "full_name": "Carol Williams",
+      "role": "student",
+      "about": "Physics student",
+      "avatar_url": null,
+      "points": 310,
+      "warnings": 0,
+      "is_banned": 0,
+      "created_at": "2026-04-17T18:34:20.710Z",
+      "updated_at": "2026-04-17T18:34:20.710Z"
+    },
+    {
+      "id": "s0000000-0000-0000-0000-000000000004",
+      "email": "dave@student.com",
+      "password_hash": "$2a$10$MhS3f/yqw4W/HJhjA7gCauAwYLr/CTSKJsSIkhQh2HwStcu/NC0i6",
+      "full_name": "Dave Brown",
+      "role": "student",
+      "about": "Engineering student",
+      "avatar_url": null,
+      "points": 80,
+      "warnings": 0,
+      "is_banned": 0,
+      "created_at": "2026-04-17T18:34:20.710Z",
+      "updated_at": "2026-04-17T18:34:20.710Z"
+    },
+    {
+      "id": "s0000000-0000-0000-0000-000000000005",
+      "email": "eve@student.com",
+      "password_hash": "$2a$10$MhS3f/yqw4W/HJhjA7gCauAwYLr/CTSKJsSIkhQh2HwStcu/NC0i6",
+      "full_name": "Eve Davis",
+      "role": "student",
+      "about": "Biology researcher",
+      "avatar_url": null,
+      "points": 420,
+      "warnings": 0,
+      "is_banned": 0,
+      "created_at": "2026-04-17T18:34:20.710Z",
+      "updated_at": "2026-04-17T18:34:20.710Z"
+    },
+    {
+      "id": "super-admin-master",
+      "email": "master@scholargrid.com",
+      "password_hash": "$2a$10$jceEIv3v3/UF3WoMXOryN.sxXrm/.LerJOwy9DCKPPORvCBi0UIXu",
+      "full_name": "Master Admin",
+      "role": "superadmin",
+      "about": "Permanent Unbreakable Super Admin",
+      "avatar_url": null,
+      "points": 0,
+      "warnings": 0,
+      "is_banned": 0,
+      "created_at": "2026-04-17T20:00:37.394Z",
+      "updated_at": "2026-04-17T20:00:37.433Z"
+    },
+    {
+      "id": "358abbe2-0935-4c89-8ab6-f8c39b6d3143",
+      "email": "aarohi@gmail.com",
+      "password_hash": "$2a$10$ZKKiDyzyhr9J/WwHsv/viewc0lVBDJd439ypA6dTzNudVF6kTpDWe",
+      "full_name": "aarohi patil",
+      "role": "faculty",
+      "about": "",
+      "avatar_url": null,
+      "points": 10,
+      "warnings": 0,
+      "is_banned": 0,
+      "created_at": "2026-04-17T20:07:39.022Z",
+      "updated_at": "2026-04-17T20:07:39.022Z"
+    }
+  ],
+  "faculty_codes": [
+    {
+      "id": "b6929ff1-17db-4352-8dbb-c3ccb776247e",
+      "code": "FAC-W0JCW4",
+      "created_by": "super-admin-master",
+      "is_used": 0,
+      "used_by": null,
+      "created_at": "2026-04-17T20:10:53.823Z"
+    }
+  ],
+  "groups": [
+    {
+      "id": "g0000000-0000-0000-0000-000000000001",
+      "name": "CS Study Group",
+      "description": "Computer Science discussions and help",
+      "join_code": "GRP-2026-CS1",
+      "created_by": "a0000000-0000-0000-0000-000000000001",
+      "created_at": "2026-04-17T18:34:20.710Z"
+    },
+    {
+      "id": "g0000000-0000-0000-0000-000000000002",
+      "name": "Math Warriors",
+      "description": "Advanced mathematics study group",
+      "join_code": "STD-2026-MTH",
+      "created_by": "a0000000-0000-0000-0000-000000000001",
+      "created_at": "2026-04-17T18:34:20.710Z"
+    },
+    {
+      "id": "g0000000-0000-0000-0000-000000000003",
+      "name": "Physics Lab",
+      "description": "Physics experiments and theory",
+      "join_code": "DSC-2026-PHY",
+      "created_by": "a0000000-0000-0000-0000-000000000001",
+      "created_at": "2026-04-17T18:34:20.710Z"
+    }
+  ],
+  "group_members": [
+    {
+      "group_id": "g0000000-0000-0000-0000-000000000001",
+      "user_id": "a0000000-0000-0000-0000-000000000001",
+      "joined_at": "2026-04-17T18:34:20.710Z"
+    },
+    {
+      "group_id": "g0000000-0000-0000-0000-000000000001",
+      "user_id": "s0000000-0000-0000-0000-000000000001",
+      "joined_at": "2026-04-17T18:34:20.710Z"
+    },
+    {
+      "group_id": "g0000000-0000-0000-0000-000000000001",
+      "user_id": "s0000000-0000-0000-0000-000000000002",
+      "joined_at": "2026-04-17T18:34:20.710Z"
+    },
+    {
+      "group_id": "g0000000-0000-0000-0000-000000000002",
+      "user_id": "s0000000-0000-0000-0000-000000000002",
+      "joined_at": "2026-04-17T18:34:20.710Z"
+    },
+    {
+      "group_id": "g0000000-0000-0000-0000-000000000002",
+      "user_id": "s0000000-0000-0000-0000-000000000003",
+      "joined_at": "2026-04-17T18:34:20.710Z"
+    },
+    {
+      "group_id": "g0000000-0000-0000-0000-000000000003",
+      "user_id": "s0000000-0000-0000-0000-000000000003",
+      "joined_at": "2026-04-17T18:34:20.710Z"
+    },
+    {
+      "group_id": "g0000000-0000-0000-0000-000000000003",
+      "user_id": "s0000000-0000-0000-0000-000000000004",
+      "joined_at": "2026-04-17T18:34:20.710Z"
+    },
+    {
+      "group_id": "g0000000-0000-0000-0000-000000000003",
+      "user_id": "s0000000-0000-0000-0000-000000000005",
+      "joined_at": "2026-04-17T18:34:20.710Z"
+    },
+    {
+      "group_id": "g0000000-0000-0000-0000-000000000002",
+      "user_id": "358abbe2-0935-4c89-8ab6-f8c39b6d3143",
+      "joined_at": "2026-04-17T20:09:34.017Z"
+    }
+  ],
+  "messages": [
+    {
+      "id": "e80e27c5-a82e-4a9a-a605-5d93f6c3839c",
+      "group_id": "g0000000-0000-0000-0000-000000000001",
+      "sender_id": "s0000000-0000-0000-0000-000000000001",
+      "content": "Hey everyone! Ready for the algorithms exam?",
+      "file_url": null,
+      "file_name": null,
+      "file_type": null,
+      "created_at": "2026-04-17T18:34:20.710Z"
+    },
+    {
+      "id": "f2e13601-c4c7-431d-b804-1934f675d663",
+      "group_id": "g0000000-0000-0000-0000-000000000001",
+      "sender_id": "s0000000-0000-0000-0000-000000000002",
+      "content": "Yes! I uploaded my notes on graph traversal.",
+      "file_url": null,
+      "file_name": null,
+      "file_type": null,
+      "created_at": "2026-04-17T18:34:20.710Z"
+    },
+    {
+      "id": "679137df-bc5b-40c5-aa8d-67adf6de1f30",
+      "group_id": "g0000000-0000-0000-0000-000000000002",
+      "sender_id": "s0000000-0000-0000-0000-000000000002",
+      "content": "Can someone explain eigenvalues?",
+      "file_url": null,
+      "file_name": null,
+      "file_type": null,
+      "created_at": "2026-04-17T18:34:20.710Z"
+    },
+    {
+      "id": "754f2f41-3ce4-43ec-b821-1e8c76b07f0c",
+      "group_id": "g0000000-0000-0000-0000-000000000002",
+      "sender_id": "s0000000-0000-0000-0000-000000000003",
+      "content": "Sure! Think of them as the scaling factors of a matrix transformation.",
+      "file_url": null,
+      "file_name": null,
+      "file_type": null,
+      "created_at": "2026-04-17T18:34:20.710Z"
+    },
+    {
+      "id": "5d1cce15-289e-4d73-b58c-0550ccaaafc6",
+      "group_id": "g0000000-0000-0000-0000-000000000003",
+      "sender_id": "s0000000-0000-0000-0000-000000000004",
+      "content": "Lab report due Friday, anyone started?",
+      "file_url": null,
+      "file_name": null,
+      "file_type": null,
+      "created_at": "2026-04-17T18:34:20.710Z"
+    },
+    {
+      "id": "cabe5587-5157-4977-933f-7dbe75c8dc44",
+      "group_id": "g0000000-0000-0000-0000-000000000002",
+      "sender_id": "358abbe2-0935-4c89-8ab6-f8c39b6d3143",
+      "content": "hiii",
+      "file_url": null,
+      "file_name": null,
+      "file_type": null,
+      "created_at": "2026-04-17T20:09:38.589Z"
+    }
+  ],
+  "notes": [
+    {
+      "id": "n0000000-0000-0000-0000-000000000001",
+      "uploader_id": "s0000000-0000-0000-0000-000000000001",
+      "title": "Data Structures Complete Guide",
+      "description": "Comprehensive notes on arrays, trees, graphs, and hash tables",
+      "subject": "Computer Science",
+      "file_url": "/uploads/notes/sample-ds.pdf",
+      "file_name": "data-structures.pdf",
+      "file_type": "application/pdf",
+      "file_size": 2048000,
+      "is_flagged": 0,
+      "is_approved": 1,
+      "downloads": 45,
+      "created_at": "2026-04-17T18:34:20.710Z"
+    },
+    {
+      "id": "n0000000-0000-0000-0000-000000000002",
+      "uploader_id": "s0000000-0000-0000-0000-000000000002",
+      "title": "Linear Algebra Cheat Sheet",
+      "description": "Quick reference for matrices, determinants, and eigenvalues",
+      "subject": "Mathematics",
+      "file_url": "/uploads/notes/sample-la.pdf",
+      "file_name": "linear-algebra.pdf",
+      "file_type": "application/pdf",
+      "file_size": 1024000,
+      "is_flagged": 0,
+      "is_approved": 1,
+      "downloads": 32,
+      "created_at": "2026-04-17T18:34:20.710Z"
+    },
+    {
+      "id": "n0000000-0000-0000-0000-000000000003",
+      "uploader_id": "s0000000-0000-0000-0000-000000000003",
+      "title": "Quantum Mechanics Basics",
+      "description": "Introduction to wave-particle duality and Schrodinger equation",
+      "subject": "Physics",
+      "file_url": "/uploads/notes/sample-qm.pdf",
+      "file_name": "quantum-mechanics.pdf",
+      "file_type": "application/pdf",
+      "file_size": 3072000,
+      "is_flagged": 0,
+      "is_approved": 1,
+      "downloads": 28,
+      "created_at": "2026-04-17T18:34:20.710Z"
+    },
+    {
+      "id": "n0000000-0000-0000-0000-000000000004",
+      "uploader_id": "s0000000-0000-0000-0000-000000000005",
+      "title": "Cell Biology Notes",
+      "description": "Detailed notes on cell structure, organelles, and processes",
+      "subject": "Biology",
+      "file_url": "/uploads/notes/sample-bio.pdf",
+      "file_name": "cell-biology.pdf",
+      "file_type": "application/pdf",
+      "file_size": 1536000,
+      "is_flagged": 0,
+      "is_approved": 1,
+      "downloads": 19,
+      "created_at": "2026-04-17T18:34:20.710Z"
+    },
+    {
+      "id": "n0000000-0000-0000-0000-000000000005",
+      "uploader_id": "s0000000-0000-0000-0000-000000000001",
+      "title": "Algorithm Design Patterns",
+      "description": "Dynamic programming, greedy, divide and conquer patterns",
+      "subject": "Computer Science",
+      "file_url": "/uploads/notes/sample-algo.pdf",
+      "file_name": "algorithms.pdf",
+      "file_type": "application/pdf",
+      "file_size": 2560000,
+      "is_flagged": 0,
+      "is_approved": 1,
+      "downloads": 55,
+      "created_at": "2026-04-17T18:34:20.710Z"
+    },
+    {
+      "id": "6d1b13b6-bb3a-4c9f-8a5f-a6db5a0afd68",
+      "uploader_id": "358abbe2-0935-4c89-8ab6-f8c39b6d3143",
+      "title": "the dna of numbers",
+      "description": "an excellent ppt for understanding the dna of number an topic of mathematics 3",
+      "subject": "Mathematics",
+      "file_url": "/uploads/notes/1776456533349-667379146.pptx",
+      "file_name": "The-DNA-of-Numbers.pptx",
+      "file_type": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+      "file_size": 10609146,
+      "is_flagged": 0,
+      "is_approved": 1,
+      "downloads": 2,
+      "created_at": "2026-04-17T20:08:54.077Z"
+    }
+  ],
+  "note_ratings": [
+    {
+      "id": "2efd4934-869c-4964-a00c-bc0628f48620",
+      "note_id": "6d1b13b6-bb3a-4c9f-8a5f-a6db5a0afd68",
+      "user_id": "358abbe2-0935-4c89-8ab6-f8c39b6d3143",
+      "rating": 5,
+      "review": "i love the quality of the notes",
+      "created_at": "2026-04-17T20:12:09.220Z"
+    }
+  ],
+  "leaderboard_points": [
+    {
+      "id": "e1325b7e-de7f-4531-b31a-3146d2fa53b6",
+      "user_id": "358abbe2-0935-4c89-8ab6-f8c39b6d3143",
+      "points": 10,
+      "reason": "note_upload",
+      "reference_id": "6d1b13b6-bb3a-4c9f-8a5f-a6db5a0afd68",
+      "created_at": "2026-04-17T20:08:54.077Z"
+    }
+  ],
+  "complaints": [
+    {
+      "id": "aa3e88cc-3dde-4397-b63d-e544c7ce0e51",
+      "student_id": "s0000000-0000-0000-0000-000000000001",
+      "title": "Cannot download notes",
+      "description": "Getting a 404 error when trying to download uploaded notes",
+      "status": "open",
+      "admin_reply": null,
+      "resolved_by": null,
+      "created_at": "2026-04-17T18:34:20.710Z",
+      "updated_at": "2026-04-17T18:34:20.710Z"
+    },
+    {
+      "id": "3012e172-b460-40cb-a6c9-40eb9eb00020",
+      "student_id": "s0000000-0000-0000-0000-000000000004",
+      "title": "Incorrect points calculation",
+      "description": "My points were not updated after uploading 3 notes",
+      "status": "in_progress",
+      "admin_reply": null,
+      "resolved_by": null,
+      "created_at": "2026-04-17T18:34:20.710Z",
+      "updated_at": "2026-04-17T18:34:20.710Z"
+    }
+  ]
+}

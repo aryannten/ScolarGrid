@@ -4,12 +4,17 @@ const http = require('http');
 const path = require('path');
 const cors = require('cors');
 const WebSocket = require('ws');
-const mysql = require('mysql2/promise');
 const multer = require('multer');
 const fs = require('fs');
+const { initDb, store, saveToDisk } = require('./db');
 
 const app = express();
 const server = http.createServer(app);
+
+// ── Initialize Database ────────────────────────────────────
+initDb();
+app.locals.store = store;
+app.locals.saveToDisk = saveToDisk;
 
 // ── Middleware ──────────────────────────────────────────────
 app.use(cors());
@@ -24,20 +29,6 @@ const uploadsDir = path.join(__dirname, 'public', 'uploads');
 });
 app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 
-// ── MySQL Connection Pool ──────────────────────────────────
-const pool = mysql.createPool({
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'scholargrid',
-  waitForConnections: true,
-  connectionLimit: 10,
-  charset: 'utf8mb4',
-});
-
-// Make pool available to routes
-app.locals.db = pool;
-
 // ── Multer Config ──────────────────────────────────────────
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -50,23 +41,21 @@ const storage = multer.diskStorage({
     cb(null, uniqueSuffix + path.extname(file.originalname));
   }
 });
-const upload = multer({ storage, limits: { fileSize: 50 * 1024 * 1024 } }); // 50MB limit
+const upload = multer({ storage, limits: { fileSize: 50 * 1024 * 1024 } });
 app.locals.upload = upload;
 
 // ── JWT Middleware ──────────────────────────────────────────
 const jwt = require('jsonwebtoken');
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret';
+const JWT_SECRET = process.env.JWT_SECRET || 'scholargrid-dev-secret-key-2026';
 
 function authenticateJWT(req, res, next) {
   const authHeader = req.headers.authorization;
   if (!authHeader) return res.status(401).json({ error: 'Missing token' });
-
   const token = authHeader.split(' ')[1];
   if (!token) return res.status(401).json({ error: 'Missing token' });
-
   jwt.verify(token, JWT_SECRET, (err, user) => {
     if (err) return res.status(403).json({ error: 'Invalid or expired token' });
-    req.user = user; // { id, role }
+    req.user = user;
     next();
   });
 }
@@ -78,9 +67,7 @@ function requireSuperAdmin(req, res, next) {
 
 function requireRoles(roles) {
   return (req, res, next) => {
-    if (!roles.includes(req.user.role)) {
-      return res.status(403).json({ error: 'Insufficient permissions' });
-    }
+    if (!roles.includes(req.user.role)) return res.status(403).json({ error: 'Insufficient permissions' });
     next();
   };
 }
@@ -92,7 +79,7 @@ app.locals.JWT_SECRET = JWT_SECRET;
 
 // ── WebSocket Server ───────────────────────────────────────
 const wss = new WebSocket.Server({ server });
-const rooms = new Map(); // groupId -> Set(ws)
+const rooms = new Map();
 
 wss.on('connection', (ws) => {
   ws.on('message', (message) => {
@@ -103,11 +90,8 @@ wss.on('connection', (ws) => {
         if (!rooms.has(data.groupId)) rooms.set(data.groupId, new Set());
         rooms.get(data.groupId).add(ws);
       }
-    } catch (e) {
-      console.error('WS message parse error:', e);
-    }
+    } catch (e) { console.error('WS parse error:', e); }
   });
-
   ws.on('close', () => {
     if (ws.groupId && rooms.has(ws.groupId)) {
       rooms.get(ws.groupId).delete(ws);
@@ -120,9 +104,7 @@ function broadcastToRoom(groupId, messageData) {
   if (rooms.has(groupId)) {
     const payload = JSON.stringify({ type: 'new_message', payload: messageData });
     for (const client of rooms.get(groupId)) {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(payload);
-      }
+      if (client.readyState === WebSocket.OPEN) client.send(payload);
     }
   }
 }
@@ -146,4 +128,5 @@ const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
   console.log(`✅ ScholarGrid API running on http://localhost:${PORT}`);
   console.log(`📡 WebSocket server ready`);
+  console.log(`💾 Using in-memory database (no MySQL/SQLite needed)`);
 });

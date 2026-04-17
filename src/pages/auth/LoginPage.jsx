@@ -20,7 +20,7 @@ export default function LoginPage() {
     try {
       const result = await login(email, password);
       if (result.success) {
-        navigate(result.user?.role === 'admin' ? '/admin/dashboard' : '/dashboard');
+        navigate(['superadmin', 'faculty'].includes(result.user?.role) ? '/management/dashboard' : '/dashboard');
       } else {
         setError(result.error || 'Login failed. Please try again.');
       }
