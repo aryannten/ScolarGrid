@@ -4,6 +4,9 @@ const router = express.Router();
 function auth() {
   return (req, res, next) => req.app.locals.authenticateJWT(req, res, next);
 }
+function roles(r) {
+  return (req, res, next) => req.app.locals.requireRoles(r)(req, res, next);
+}
 
 // GET /api/leaderboard
 router.get('/', auth(), async (req, res) => {
@@ -60,6 +63,37 @@ router.get('/:userId/history', auth(), async (req, res) => {
     res.json(rows);
   } catch (err) {
     console.error('Fetch point history error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/leaderboard/points — award/deduct points (faculty, superadmin)
+router.post('/points', auth(), roles(['superadmin', 'faculty']), async (req, res) => {
+  try {
+    const db = req.app.locals.db;
+    const { studentId, points, reason } = req.body;
+    
+    if (!studentId || !points || !reason) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    const { v4: uuidv4 } = require('uuid');
+    const id = uuidv4();
+
+    // The ENUM for reason in DB only supports: 'note_upload','note_download','login_streak','admin_bonus','penalty'
+    // Map reason text to closest valid ENUM, or just use admin_bonus/penalty
+    const dbReason = points > 0 ? 'admin_bonus' : 'penalty';
+
+    await db.query(
+      'INSERT INTO leaderboard_points (id, user_id, points, reason, reference_id) VALUES (?, ?, ?, ?, ?)',
+      [id, studentId, points, dbReason, req.user.id]
+    );
+
+    await db.query('UPDATE profiles SET points = points + ? WHERE id = ?', [points, studentId]);
+    
+    res.json({ success: true, id, points });
+  } catch (err) {
+    console.error('Update points error:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

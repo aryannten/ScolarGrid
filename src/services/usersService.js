@@ -29,6 +29,36 @@ export async function banUser(userId, banned) {
 }
 
 /**
+ * Change user role (Super Admin only).
+ */
+export async function changeUserRole(userId, role) {
+  return apiPut(`/api/users/${userId}/role`, { role });
+}
+
+/**
+ * Fetch all faculty codes (Super Admin only).
+ */
+export async function fetchFacultyCodes() {
+  return apiGet('/api/users/faculty-codes');
+}
+
+/**
+ * Generate a new faculty code (Super Admin only).
+ */
+import { apiPost, apiDelete } from '../lib/apiClient';
+
+export async function generateFacultyCode() {
+  return apiPost('/api/users/faculty-codes', {});
+}
+
+/**
+ * Delete a faculty code.
+ */
+export async function deleteFacultyCode(codeId) {
+  return apiDelete(`/api/users/faculty-codes/${codeId}`);
+}
+
+/**
  * Update a user's profile.
  */
 export async function updateUserProfile(userId, updates) {
@@ -39,4 +69,11 @@ export async function updateUserProfile(userId, updates) {
   if (updates.points !== undefined) dbUpdates.points = updates.points;
 
   return apiPut(`/api/users/${userId}`, dbUpdates);
+}
+
+/**
+ * Upgrade to Faculty using a code.
+ */
+export async function upgradeToFaculty(faculty_code) {
+  return apiPost('/api/users/upgrade-faculty', { faculty_code });
 }

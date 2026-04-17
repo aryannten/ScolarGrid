@@ -5,8 +5,8 @@ const { v4: uuidv4 } = require('uuid');
 function auth() {
   return (req, res, next) => req.app.locals.authenticateJWT(req, res, next);
 }
-function admin() {
-  return (req, res, next) => req.app.locals.requireAdmin(req, res, next);
+function superadmin() {
+  return (req, res, next) => req.app.locals.requireSuperAdmin(req, res, next);
 }
 
 // GET /api/complaints
@@ -15,7 +15,7 @@ router.get('/', auth(), async (req, res) => {
     const db = req.app.locals.db;
     let rows;
 
-    if (req.user.role === 'admin') {
+    if (req.user.role === 'superadmin') {
       [rows] = await db.query(
         `SELECT c.*, p.full_name AS student_name
          FROM complaints c
@@ -67,7 +67,7 @@ router.post('/', auth(), async (req, res) => {
 });
 
 // PUT /api/complaints/:id
-router.put('/:id', auth(), admin(), async (req, res) => {
+router.put('/:id', auth(), superadmin(), async (req, res) => {
   try {
     const db = req.app.locals.db;
     const { status, adminReply } = req.body;

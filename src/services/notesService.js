@@ -54,3 +54,10 @@ export async function flagNote(noteId, flagged) {
 export async function approveNote(noteId, approved) {
   return apiPut(`/api/notes/${noteId}/approve`, { approved });
 }
+
+/**
+ * Rate a note (1-5).
+ */
+export async function rateNote(noteId, rating, review) {
+  return apiPost(`/api/notes/${noteId}/rate`, { rating, review });
+}

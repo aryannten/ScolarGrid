@@ -5,8 +5,11 @@ const { v4: uuidv4 } = require('uuid');
 function auth() {
   return (req, res, next) => req.app.locals.authenticateJWT(req, res, next);
 }
-function admin() {
-  return (req, res, next) => req.app.locals.requireAdmin(req, res, next);
+function superadmin() {
+  return (req, res, next) => req.app.locals.requireSuperAdmin(req, res, next);
+}
+function roles(r) {
+  return (req, res, next) => req.app.locals.requireRoles(r)(req, res, next);
 }
 
 // GET /api/groups — user's groups or all (admin)
@@ -15,7 +18,7 @@ router.get('/', auth(), async (req, res) => {
     const db = req.app.locals.db;
     let rows;
 
-    if (req.user.role === 'admin') {
+    if (req.user.role === 'superadmin') {
       [rows] = await db.query('SELECT * FROM `groups` ORDER BY created_at DESC');
     } else {
       [rows] = await db.query(
@@ -45,8 +48,8 @@ router.get('/', auth(), async (req, res) => {
   }
 });
 
-// POST /api/groups — create group (admin)
-router.post('/', auth(), admin(), async (req, res) => {
+// POST /api/groups — create group (superadmin or faculty)
+router.post('/', auth(), roles(['superadmin', 'faculty']), async (req, res) => {
   try {
     const db = req.app.locals.db;
     const { name, description } = req.body;
@@ -72,8 +75,8 @@ router.post('/', auth(), admin(), async (req, res) => {
   }
 });
 
-// DELETE /api/groups/:id (admin)
-router.delete('/:id', auth(), admin(), async (req, res) => {
+// DELETE /api/groups/:id (superadmin or faculty)
+router.delete('/:id', auth(), roles(['superadmin', 'faculty']), async (req, res) => {
   try {
     const db = req.app.locals.db;
     await db.query('DELETE FROM `groups` WHERE id = ?', [req.params.id]);

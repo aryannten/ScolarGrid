@@ -3,7 +3,8 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { uploadAvatar } from '../../services/storageService';
-import { User, Mail, Edit3, Save, Sun, Moon, Upload, Star, FileText, Download, Calendar, Award, Camera } from 'lucide-react';
+import { upgradeToFaculty } from '../../services/usersService';
+import { User, Mail, Edit3, Save, Sun, Moon, Upload, Star, FileText, Download, Calendar, Award, Camera, Key } from 'lucide-react';
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.06 } } };
 const item = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } };
@@ -25,6 +26,20 @@ export default function ProfilePage() {
       console.error('Profile update error:', err);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleUpgrade = async () => {
+    const code = prompt('Enter Faculty Registration Code:');
+    if (!code) return;
+    try {
+      const res = await upgradeToFaculty(code);
+      if (res.success) {
+        alert('Successfully upgraded to Faculty!');
+        window.location.href = '/management/dashboard';
+      }
+    } catch (err) {
+      alert('Upgrade failed: ' + (err.response?.data?.error || err.message));
     }
   };
 
@@ -131,6 +146,17 @@ export default function ProfilePage() {
             <div className="w-11 h-6 bg-gray-200 peer-focus:ring-2 peer-focus:ring-brand-500/50 rounded-full peer dark:bg-dark-surface peer-checked:bg-brand-500 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
           </label>
         </div>
+        {user?.role === 'student' && (
+          <div className="flex items-center justify-between py-3 border-t border-gray-100 dark:border-dark-border/50">
+            <div>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">Faculty Access</p>
+              <p className="text-xs text-gray-500">Upgrade to a faculty account with a registration code</p>
+            </div>
+            <button onClick={handleUpgrade} className="btn-secondary text-sm flex items-center gap-2">
+              <Key className="w-4 h-4" /> Upgrade
+            </button>
+          </div>
+        )}
       </motion.div>
     </motion.div>
   );

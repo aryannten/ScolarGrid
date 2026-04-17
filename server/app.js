@@ -71,13 +71,23 @@ function authenticateJWT(req, res, next) {
   });
 }
 
-function requireAdmin(req, res, next) {
-  if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin only' });
+function requireSuperAdmin(req, res, next) {
+  if (req.user.role !== 'superadmin') return res.status(403).json({ error: 'Superadmin only' });
   next();
 }
 
+function requireRoles(roles) {
+  return (req, res, next) => {
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({ error: 'Insufficient permissions' });
+    }
+    next();
+  };
+}
+
 app.locals.authenticateJWT = authenticateJWT;
-app.locals.requireAdmin = requireAdmin;
+app.locals.requireSuperAdmin = requireSuperAdmin;
+app.locals.requireRoles = requireRoles;
 app.locals.JWT_SECRET = JWT_SECRET;
 
 // ── WebSocket Server ───────────────────────────────────────

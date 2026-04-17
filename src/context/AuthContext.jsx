@@ -65,12 +65,12 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const signup = async (name, email, password, role) => {
+  const signup = async (name, email, password, role, facultyCode) => {
     setLoading(true);
     try {
       const data = await api('/api/auth/signup', {
         method: 'POST',
-        body: JSON.stringify({ name, email, password, role: role || 'student' }),
+        body: JSON.stringify({ name, email, password, role: role || 'student', faculty_code: facultyCode }),
         headers: { 'Content-Type': 'application/json' },
       });
 
@@ -145,7 +145,8 @@ export function AuthProvider({ children }) {
         logout,
         updateProfile,
         refreshProfile,
-        isAdmin: user?.role === 'admin',
+        isSuperAdmin: user?.role === 'superadmin',
+        isFaculty: user?.role === 'faculty',
         isStudent: user?.role === 'student',
       }}
     >

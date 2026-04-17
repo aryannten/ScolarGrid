@@ -24,11 +24,28 @@ router.post('/signup', async (req, res) => {
     const passwordHash = await bcrypt.hash(password, 10);
     const userRole = role || 'student';
 
-    await db.query(
-      `INSERT INTO profiles (id, email, password_hash, full_name, role)
-       VALUES (?, ?, ?, ?, ?)`,
-      [id, email, passwordHash, name || '', userRole]
-    );
+    if (userRole === 'faculty') {
+      const { faculty_code } = req.body;
+      if (!faculty_code) {
+        return res.status(400).json({ error: 'Faculty code is required for faculty registration' });
+      }
+      const [codes] = await db.query('SELECT * FROM faculty_codes WHERE code = ? AND is_used = 0', [faculty_code]);
+      if (codes.length === 0) {
+        return res.status(400).json({ error: 'Invalid or already used faculty code' });
+      }
+      
+      await db.query(
+        `INSERT INTO profiles (id, email, password_hash, full_name, role) VALUES (?, ?, ?, ?, ?)`,
+        [id, email, passwordHash, name || '', userRole]
+      );
+      
+      await db.query('UPDATE faculty_codes SET is_used = 1, used_by = ? WHERE code = ?', [id, faculty_code]);
+    } else {
+      await db.query(
+        `INSERT INTO profiles (id, email, password_hash, full_name, role) VALUES (?, ?, ?, ?, ?)`,
+        [id, email, passwordHash, name || '', userRole]
+      );
+    }
 
     const token = jwt.sign({ id, role: userRole }, req.app.locals.JWT_SECRET, { expiresIn: '7d' });
 

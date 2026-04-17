@@ -5,8 +5,11 @@ const { v4: uuidv4 } = require('uuid');
 function auth() {
   return (req, res, next) => req.app.locals.authenticateJWT(req, res, next);
 }
-function admin() {
-  return (req, res, next) => req.app.locals.requireAdmin(req, res, next);
+function superadmin() {
+  return (req, res, next) => req.app.locals.requireSuperAdmin(req, res, next);
+}
+function roles(r) {
+  return (req, res, next) => req.app.locals.requireRoles(r)(req, res, next);
 }
 
 // GET /api/notes — list notes with filters
@@ -15,9 +18,11 @@ router.get('/', auth(), async (req, res) => {
     const db = req.app.locals.db;
     const { subject, search, sortBy, limit } = req.query;
 
-    let sql = `SELECT n.*, p.full_name AS uploader_name, p.avatar_url AS uploader_avatar
+    let sql = `SELECT n.*, p.full_name AS uploader_name, p.avatar_url AS uploader_avatar,
+                      COALESCE(AVG(r.rating), 0) AS avg_rating, COUNT(r.id) AS rating_count
                FROM notes n
                LEFT JOIN profiles p ON n.uploader_id = p.id
+               LEFT JOIN note_ratings r ON n.id = r.note_id
                WHERE 1=1`;
     const params = [];
 
@@ -30,8 +35,12 @@ router.get('/', auth(), async (req, res) => {
       params.push(`%${search}%`, `%${search}%`);
     }
 
-    if (sortBy === 'downloads' || sortBy === 'rating') {
+    sql += ' GROUP BY n.id';
+
+    if (sortBy === 'downloads') {
       sql += ' ORDER BY n.downloads DESC';
+    } else if (sortBy === 'rating') {
+      sql += ' ORDER BY avg_rating DESC';
     } else {
       sql += ' ORDER BY n.created_at DESC';
     }
@@ -112,7 +121,7 @@ router.delete('/:id', auth(), async (req, res) => {
     // Check ownership or admin
     const [rows] = await db.query('SELECT uploader_id FROM notes WHERE id = ?', [id]);
     if (rows.length === 0) return res.status(404).json({ error: 'Note not found' });
-    if (rows[0].uploader_id !== req.user.id && req.user.role !== 'admin') {
+    if (rows[0].uploader_id !== req.user.id && !['superadmin', 'faculty'].includes(req.user.role)) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -125,7 +134,7 @@ router.delete('/:id', auth(), async (req, res) => {
 });
 
 // PUT /api/notes/:id/flag
-router.put('/:id/flag', auth(), admin(), async (req, res) => {
+router.put('/:id/flag', auth(), roles(['superadmin', 'faculty']), async (req, res) => {
   try {
     const db = req.app.locals.db;
     const { flagged } = req.body;
@@ -138,7 +147,7 @@ router.put('/:id/flag', auth(), admin(), async (req, res) => {
 });
 
 // PUT /api/notes/:id/approve
-router.put('/:id/approve', auth(), admin(), async (req, res) => {
+router.put('/:id/approve', auth(), roles(['superadmin', 'faculty']), async (req, res) => {
   try {
     const db = req.app.locals.db;
     const { approved } = req.body;
@@ -146,6 +155,35 @@ router.put('/:id/approve', auth(), admin(), async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     console.error('Approve note error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/notes/:id/rate
+router.post('/:id/rate', auth(), async (req, res) => {
+  try {
+    const db = req.app.locals.db;
+    const { id } = req.params;
+    const { rating, review } = req.body;
+    const userId = req.user.id;
+
+    if (!rating || rating < 1 || rating > 5) {
+      return res.status(400).json({ error: 'Rating must be between 1 and 5' });
+    }
+
+    const { v4: uuidv4 } = require('uuid');
+    const ratingId = uuidv4();
+
+    await db.query(
+      `INSERT INTO note_ratings (id, note_id, user_id, rating, review) 
+       VALUES (?, ?, ?, ?, ?) 
+       ON DUPLICATE KEY UPDATE rating = VALUES(rating), review = VALUES(review)`,
+      [ratingId, id, userId, rating, review || null]
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Rate note error:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -182,8 +220,8 @@ function mapNote(row) {
     fileUrl: row.file_url,
     fileName: row.file_name,
     downloads: row.downloads || 0,
-    rating: 0,
-    totalRatings: 0,
+    rating: row.avg_rating ? parseFloat(row.avg_rating) : 0,
+    totalRatings: row.rating_count || 0,
     isFlagged: row.is_flagged ? true : false,
     isApproved: row.is_approved ? true : false,
     modStatus: row.is_flagged ? 'Flagged' : 'Approved',

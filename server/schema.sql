@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   password_hash VARCHAR(255) NOT NULL,
   full_name VARCHAR(255),
   avatar_url VARCHAR(255),
-  role ENUM('student','admin') NOT NULL DEFAULT 'student',
+  role ENUM('superadmin','faculty','student') NOT NULL DEFAULT 'student',
   about TEXT,
   points INT NOT NULL DEFAULT 0,
   warnings INT NOT NULL DEFAULT 0,
@@ -22,6 +22,18 @@ CREATE TABLE IF NOT EXISTS profiles (
 );
 CREATE INDEX idx_profiles_role ON profiles(role);
 CREATE INDEX idx_profiles_points_desc ON profiles(points DESC);
+
+-- Faculty Codes
+CREATE TABLE IF NOT EXISTS faculty_codes (
+  id VARCHAR(36) PRIMARY KEY,
+  code VARCHAR(50) NOT NULL UNIQUE,
+  created_by VARCHAR(36) NOT NULL,
+  is_used BOOLEAN NOT NULL DEFAULT 0,
+  used_by VARCHAR(36),
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE CASCADE,
+  FOREIGN KEY (used_by) REFERENCES profiles(id) ON DELETE SET NULL
+);
 
 -- Groups
 CREATE TABLE IF NOT EXISTS `groups` (
@@ -77,6 +89,19 @@ CREATE TABLE IF NOT EXISTS notes (
   FOREIGN KEY (uploader_id) REFERENCES profiles(id) ON DELETE CASCADE
 );
 
+-- Note Ratings
+CREATE TABLE IF NOT EXISTS note_ratings (
+  id VARCHAR(36) PRIMARY KEY,
+  note_id VARCHAR(36) NOT NULL,
+  user_id VARCHAR(36) NOT NULL,
+  rating INT NOT NULL CHECK (rating >= 1 AND rating <= 5),
+  review TEXT,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (note_id) REFERENCES notes(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE,
+  UNIQUE (note_id, user_id)
+);
+
 -- Leaderboard Points
 CREATE TABLE IF NOT EXISTS leaderboard_points (
   id VARCHAR(36) PRIMARY KEY,
@@ -127,9 +152,13 @@ DELIMITER ;
 -- Seed Data
 -- ============================================================
 
--- Admin user (password: admin123)
+-- Superadmin user (password: admin123)
 INSERT INTO profiles (id, email, password_hash, full_name, role, about, points) VALUES
-('a0000000-0000-0000-0000-000000000001', 'admin@scholargrid.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'Admin User', 'admin', 'Platform administrator', 0);
+('a0000000-0000-0000-0000-000000000001', 'admin@scholargrid.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'Super Admin User', 'superadmin', 'Platform administrator', 0);
+
+-- Faculty user (password: faculty123)
+INSERT INTO profiles (id, email, password_hash, full_name, role, about, points) VALUES
+('f0000000-0000-0000-0000-000000000001', 'faculty@scholargrid.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'Faculty User', 'faculty', 'Computer Science Professor', 0);
 
 -- Student users (password: student123)
 INSERT INTO profiles (id, email, password_hash, full_name, role, about, points) VALUES

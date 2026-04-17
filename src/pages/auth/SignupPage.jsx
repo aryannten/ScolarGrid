@@ -12,6 +12,7 @@ export default function SignupPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [role, setRole] = useState('student');
+  const [facultyCode, setFacultyCode] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
 
@@ -26,12 +27,12 @@ export default function SignupPage() {
       setError('Password must be at least 6 characters');
       return;
     }
-    const result = await signup(name, email, password, role);
+    const result = await signup(name, email, password, role, facultyCode);
     if (result.success) {
       if (result.needsConfirmation) {
         navigate('/auth/confirm-email', { state: { email } });
       } else {
-        navigate(result.user.role === 'admin' ? '/admin/dashboard' : '/dashboard');
+        navigate(['superadmin', 'faculty'].includes(result.user.role) ? '/admin/dashboard' : '/dashboard');
       }
     } else {
       setError(result.error);
@@ -114,8 +115,8 @@ export default function SignupPage() {
             <button onClick={() => setRole('student')} className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${role === 'student' ? 'bg-white dark:bg-dark-card text-brand-600 shadow-sm' : 'text-gray-500'}`}>
               Student
             </button>
-            <button onClick={() => setRole('admin')} className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${role === 'admin' ? 'bg-white dark:bg-dark-card text-gold-600 shadow-sm' : 'text-gray-500'}`}>
-              Admin
+            <button onClick={() => setRole('faculty')} className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${role === 'faculty' ? 'bg-white dark:bg-dark-card text-gold-600 shadow-sm' : 'text-gray-500'}`}>
+              Faculty
             </button>
           </div>
 
@@ -139,6 +140,13 @@ export default function SignupPage() {
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm password" className="input-field pl-11" required />
             </div>
+            
+            {role === 'faculty' && (
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input type="text" value={facultyCode} onChange={(e) => setFacultyCode(e.target.value)} placeholder="Faculty Code" className="input-field pl-11" required />
+              </div>
+            )}
 
             <button type="submit" disabled={loading} className="btn-primary w-full flex items-center justify-center gap-2 py-3">
               {loading ? (

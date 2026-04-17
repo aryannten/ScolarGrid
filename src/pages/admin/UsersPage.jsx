@@ -1,30 +1,40 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { fetchAllStudents, warnUser, banUser } from '../../services/usersService';
-import { Search, Ban, AlertTriangle, Eye, Shield, User } from 'lucide-react';
+import { fetchAllUsers, warnUser, banUser, changeUserRole, fetchFacultyCodes, generateFacultyCode, deleteFacultyCode } from '../../services/usersService';
+import { awardPoints } from '../../services/leaderboardService';
+import { Search, Ban, AlertTriangle, Key, Shield, User, Plus, Trash2, ChevronDown, Award } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.05 } } };
 const item = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } };
 
 export default function UsersPage() {
+  const { isSuperAdmin } = useAuth();
   const [users, setUsers] = useState([]);
+  const [codes, setCodes] = useState([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('users');
 
-  useEffect(() => {
-    loadUsers();
-  }, []);
-
-  const loadUsers = async () => {
+  const loadData = async () => {
+    setLoading(true);
     try {
-      const data = await fetchAllStudents();
-      setUsers(data);
+      const [usersData, codesData] = await Promise.all([
+        fetchAllUsers(),
+        isSuperAdmin ? fetchFacultyCodes() : Promise.resolve([])
+      ]);
+      setUsers(usersData);
+      if (isSuperAdmin) setCodes(codesData);
     } catch (err) {
-      console.error('Error loading users:', err);
+      console.error('Error loading data:', err);
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadData();
+  }, [isSuperAdmin]);
 
   const filtered = users.filter(u =>
     u.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -54,6 +64,53 @@ export default function UsersPage() {
     }
   };
 
+  const handleRoleChange = async (id, newRole) => {
+    try {
+      await changeUserRole(id, newRole);
+      setUsers(users.map(u => u.id === id ? { ...u, role: newRole } : u));
+    } catch (err) {
+      console.error('Role change error:', err);
+      alert('Failed to update role: ' + err.message);
+    }
+  };
+
+  const handleGenerateCode = async () => {
+    try {
+      const newCode = await generateFacultyCode();
+      setCodes([newCode, ...codes]);
+    } catch (err) {
+      console.error('Generate code error:', err);
+      alert('Failed to generate code: ' + err.message);
+    }
+  };
+
+  const handleDeleteCode = async (id) => {
+    try {
+      await deleteFacultyCode(id);
+      setCodes(codes.filter(c => c.id !== id));
+    } catch (err) {
+      console.error('Delete code error:', err);
+      alert('Failed to delete code: ' + err.message);
+    }
+  };
+
+  const handleUpdatePoints = async (id, currentScore) => {
+    const amountStr = prompt('Enter points to add (or negative to deduct):');
+    if (!amountStr) return;
+    const amount = parseInt(amountStr);
+    if (isNaN(amount)) return alert('Invalid amount');
+    const reason = prompt('Reason for point adjustment:');
+    if (!reason) return;
+
+    try {
+      await awardPoints(id, amount, reason);
+      setUsers(users.map(u => u.id === id ? { ...u, score: (u.score || 0) + amount } : u));
+    } catch (err) {
+      console.error('Update points error:', err);
+      alert('Failed to update points: ' + err.message);
+    }
+  };
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -66,52 +123,129 @@ export default function UsersPage() {
 
   return (
     <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
-      <motion.div variants={item}><h1 className="page-title">User Management</h1><p className="page-subtitle">Manage student accounts and permissions</p></motion.div>
-
-      <motion.div variants={item} className="glass-card p-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name or email..." className="input-field pl-10" />
+      <motion.div variants={item} className="flex justify-between items-end">
+        <div>
+          <h1 className="page-title">User Management</h1>
+          <p className="page-subtitle">Manage accounts, permissions, and faculty codes</p>
         </div>
+        {isSuperAdmin && activeTab === 'faculty-codes' && (
+          <button onClick={handleGenerateCode} className="btn-primary flex items-center gap-2">
+            <Plus className="w-4 h-4" /> Generate Code
+          </button>
+        )}
       </motion.div>
 
-      <motion.div variants={item} className="glass-card overflow-hidden">
-        <div className="table-header px-6 py-3 grid grid-cols-12 gap-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-          <span className="col-span-3">User</span>
-          <span className="col-span-2 hidden sm:block">Role</span>
-          <span className="col-span-2 hidden sm:block">Tier</span>
-          <span className="col-span-1 hidden sm:block text-center">Score</span>
-          <span className="col-span-2">Status</span>
-          <span className="col-span-2 text-right">Actions</span>
-        </div>
-        {filtered.length === 0 && (
-          <div className="text-center py-12">
-            <User className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500">No users found</p>
+      {isSuperAdmin && (
+        <motion.div variants={item} className="flex gap-4 border-b border-gray-200 dark:border-dark-border">
+          <button onClick={() => setActiveTab('users')} className={`pb-2 px-2 text-sm font-semibold transition-colors border-b-2 ${activeTab === 'users' ? 'border-brand-500 text-brand-600 dark:text-brand-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}>
+            All Users
+          </button>
+          <button onClick={() => setActiveTab('faculty-codes')} className={`pb-2 px-2 text-sm font-semibold transition-colors border-b-2 ${activeTab === 'faculty-codes' ? 'border-gold-500 text-gold-600 dark:text-gold-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}>
+            Faculty Codes
+          </button>
+        </motion.div>
+      )}
+
+      {activeTab === 'users' ? (
+        <>
+          <motion.div variants={item} className="glass-card p-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name or email..." className="input-field pl-10" />
+            </div>
+          </motion.div>
+
+          <motion.div variants={item} className="glass-card overflow-hidden">
+            <div className="table-header px-6 py-3 grid grid-cols-12 gap-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              <span className="col-span-3">User</span>
+              <span className="col-span-2 hidden sm:block">Role</span>
+              <span className="col-span-2 hidden sm:block">Tier</span>
+              <span className="col-span-1 hidden sm:block text-center">Score</span>
+              <span className="col-span-2">Status</span>
+              <span className="col-span-2 text-right">Actions</span>
+            </div>
+            {filtered.length === 0 && (
+              <div className="text-center py-12">
+                <User className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                <p className="text-gray-500">No users found</p>
+              </div>
+            )}
+            {filtered.map(u => (
+              <div key={u.id} className={`table-row px-6 py-3 grid grid-cols-12 gap-4 items-center ${u.status === 'Banned' ? 'opacity-60' : ''}`}>
+                <div className="col-span-3 flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-gradient-premium flex items-center justify-center text-white text-sm font-bold flex-shrink-0">{u.name.charAt(0)}</div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{u.name}</p>
+                    <p className="text-xs text-gray-400 truncate">{u.email}</p>
+                  </div>
+                </div>
+                <span className="col-span-2 hidden sm:block">
+                  {isSuperAdmin ? (
+                    <select
+                      value={u.role}
+                      onChange={(e) => handleRoleChange(u.id, e.target.value)}
+                      className="bg-gray-50 dark:bg-dark-bg border border-gray-200 dark:border-dark-border text-xs rounded-lg px-2 py-1 outline-none focus:border-brand-500"
+                    >
+                      <option value="student">Student</option>
+                      <option value="faculty">Faculty</option>
+                      <option value="superadmin">Superadmin</option>
+                    </select>
+                  ) : (
+                    <span className="badge-purple text-xs">{u.role}</span>
+                  )}
+                </span>
+                <span className="col-span-2 hidden sm:block"><span className="badge-gold text-xs">{u.tier || 'Bronze'}</span></span>
+                <span className="col-span-1 hidden sm:block text-center text-sm font-bold text-gray-700 dark:text-gray-300">{u.score || 0}</span>
+                <span className="col-span-2">
+                  <span className={`badge text-xs ${u.status === 'Active' ? 'badge-green' : u.status === 'Warned' ? 'badge-gold' : 'badge-red'}`}>{u.status}</span>
+                </span>
+                <div className="col-span-2 flex items-center justify-end gap-1">
+                  <button onClick={() => handleUpdatePoints(u.id, u.score)} className="p-1.5 rounded-lg hover:bg-brand-50 dark:hover:bg-brand-900/10 text-gray-400 hover:text-brand-500" title="Award Points"><Award className="w-4 h-4" /></button>
+                  <button onClick={() => handleWarn(u.id)} className="p-1.5 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-900/10 text-gray-400 hover:text-orange-500" title="Warn"><AlertTriangle className="w-4 h-4" /></button>
+                  <button onClick={() => handleToggleBan(u.id)} className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/10 text-gray-400 hover:text-red-500" title={u.status === 'Banned' ? 'Unban' : 'Ban'}><Ban className="w-4 h-4" /></button>
+                </div>
+              </div>
+            ))}
+          </motion.div>
+        </>
+      ) : (
+        <motion.div variants={item} className="glass-card overflow-hidden">
+          <div className="table-header px-6 py-3 grid grid-cols-12 gap-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+            <span className="col-span-5">Code</span>
+            <span className="col-span-3">Status</span>
+            <span className="col-span-3">Created At</span>
+            <span className="col-span-1 text-right">Actions</span>
           </div>
-        )}
-        {filtered.map(u => (
-          <div key={u.id} className={`table-row px-6 py-3 grid grid-cols-12 gap-4 items-center ${u.status === 'Banned' ? 'opacity-60' : ''}`}>
-            <div className="col-span-3 flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-gradient-premium flex items-center justify-center text-white text-sm font-bold flex-shrink-0">{u.name.charAt(0)}</div>
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{u.name}</p>
-                <p className="text-xs text-gray-400 truncate">{u.email}</p>
+          {codes.length === 0 && (
+            <div className="text-center py-12">
+              <Key className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-500">No faculty codes generated yet</p>
+            </div>
+          )}
+          {codes.map(c => (
+            <div key={c.id} className="table-row px-6 py-4 grid grid-cols-12 gap-4 items-center">
+              <div className="col-span-5 font-mono text-sm font-semibold text-gray-900 dark:text-white">
+                {c.code}
+              </div>
+              <div className="col-span-3">
+                {c.is_used ? (
+                  <span className="badge-red text-xs">Used</span>
+                ) : (
+                  <span className="badge-green text-xs">Available</span>
+                )}
+              </div>
+              <div className="col-span-3 text-sm text-gray-500">
+                {new Date(c.created_at).toLocaleDateString()}
+              </div>
+              <div className="col-span-1 flex justify-end">
+                <button onClick={() => handleDeleteCode(c.id)} className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/10 text-gray-400 hover:text-red-500" title="Delete">
+                  <Trash2 className="w-4 h-4" />
+                </button>
               </div>
             </div>
-            <span className="col-span-2 hidden sm:block"><span className="badge-purple text-xs">{u.role}</span></span>
-            <span className="col-span-2 hidden sm:block"><span className="badge-gold text-xs">{u.tier || 'Bronze'}</span></span>
-            <span className="col-span-1 hidden sm:block text-center text-sm font-bold text-gray-700 dark:text-gray-300">{u.score || 0}</span>
-            <span className="col-span-2">
-              <span className={`badge text-xs ${u.status === 'Active' ? 'badge-green' : u.status === 'Warned' ? 'badge-gold' : 'badge-red'}`}>{u.status}</span>
-            </span>
-            <div className="col-span-2 flex items-center justify-end gap-1">
-              <button onClick={() => handleWarn(u.id)} className="p-1.5 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-900/10 text-gray-400 hover:text-orange-500" title="Warn"><AlertTriangle className="w-4 h-4" /></button>
-              <button onClick={() => handleToggleBan(u.id)} className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/10 text-gray-400 hover:text-red-500" title={u.status === 'Banned' ? 'Unban' : 'Ban'}><Ban className="w-4 h-4" /></button>
-            </div>
-          </div>
-        ))}
-      </motion.div>
+          ))}
+        </motion.div>
+      )}
     </motion.div>
   );
 }

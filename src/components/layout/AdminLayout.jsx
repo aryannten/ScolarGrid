@@ -8,19 +8,20 @@ import {
   BarChart3, LogOut, Sun, Moon, Menu, X, ChevronDown, Bell, Search, Shield
 } from 'lucide-react';
 
-const adminLinks = [
-  { to: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/admin/groups', icon: MessageSquare, label: 'Chat Groups' },
-  { to: '/admin/notes', icon: FileText, label: 'Notes' },
-  { to: '/admin/users', icon: Users, label: 'Users' },
-  { to: '/admin/complaints', icon: AlertCircle, label: 'Complaints' },
-  { to: '/admin/analytics', icon: BarChart3, label: 'Analytics' },
+const getLinks = (isSuperAdmin) => [
+  { to: '/management/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/management/groups', icon: MessageSquare, label: 'Chat Groups' },
+  { to: '/management/notes', icon: FileText, label: 'Notes' },
+  ...(isSuperAdmin ? [{ to: '/management/users', icon: Users, label: 'Users' }] : []),
+  { to: '/management/complaints', icon: AlertCircle, label: 'Complaints' },
+  { to: '/management/analytics', icon: BarChart3, label: 'Analytics' },
 ];
 
 export default function AdminLayout() {
-  const { user, logout } = useAuth();
+  const { user, isSuperAdmin, logout } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const navigate = useNavigate();
+  const managementLinks = getLinks(isSuperAdmin);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [profileOpen, setProfileOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -41,13 +42,13 @@ export default function AdminLayout() {
           {sidebarOpen && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="overflow-hidden">
               <h1 className="text-lg font-serif font-bold text-gray-900 dark:text-white">ScholarGrid</h1>
-              <p className="text-xs text-gold-500 font-semibold">Admin Panel</p>
+              <p className="text-xs text-gold-500 font-semibold">{isSuperAdmin ? 'Super Admin Panel' : 'Faculty Panel'}</p>
             </motion.div>
           )}
         </div>
 
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-          {adminLinks.map(link => (
+          {managementLinks.map(link => (
             <NavLink
               key={link.to}
               to={link.to}
@@ -88,7 +89,7 @@ export default function AdminLayout() {
                   </div>
                   <div>
                     <h1 className="text-lg font-serif font-bold text-gray-900 dark:text-white">ScholarGrid</h1>
-                    <p className="text-xs text-gold-500 font-semibold">Admin Panel</p>
+                    <p className="text-xs text-gold-500 font-semibold">{isSuperAdmin ? 'Super Admin Panel' : 'Faculty Panel'}</p>
                   </div>
                 </div>
                 <button onClick={() => setMobileOpen(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-hover">
@@ -96,7 +97,7 @@ export default function AdminLayout() {
                 </button>
               </div>
               <nav className="flex-1 px-3 py-4 space-y-1">
-                {adminLinks.map(link => (
+                {managementLinks.map(link => (
                   <NavLink key={link.to} to={link.to} onClick={() => setMobileOpen(false)} className={({ isActive }) => isActive ? 'sidebar-link-active' : 'sidebar-link'}>
                     <link.icon className="w-5 h-5" /><span>{link.label}</span>
                   </NavLink>
@@ -151,7 +152,7 @@ export default function AdminLayout() {
                   >
                     <div className="px-3 py-2 border-b border-light-border dark:border-dark-border mb-1">
                       <p className="text-sm font-medium text-gray-900 dark:text-white">{user?.name}</p>
-                      <p className="text-xs text-gold-500 font-semibold">Administrator</p>
+                      <p className="text-xs text-gold-500 font-semibold">{isSuperAdmin ? 'Super Administrator' : 'Faculty Member'}</p>
                     </div>
                     <button onClick={handleLogout} className="flex items-center gap-2 px-3 py-2 text-sm text-red-500 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/10 w-full">
                       <LogOut className="w-4 h-4" /> Logout

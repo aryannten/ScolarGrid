@@ -4,7 +4,7 @@ import { ProtectedRoute } from './ProtectedRoute';
 
 // Layouts
 import StudentLayout from '../components/layout/StudentLayout';
-import AdminLayout from '../components/layout/AdminLayout';
+import ManagementLayout from '../components/layout/AdminLayout'; // Reusing the layout file, will rename inside
 
 // Auth pages
 import LoginPage from '../pages/auth/LoginPage';
@@ -62,8 +62,9 @@ export default function AppRouter() {
     <BrowserRouter>
       <Routes>
         {/* Public Routes */}
-        <Route path="/login" element={user ? <Navigate to={user.role === 'admin' ? '/admin/dashboard' : '/dashboard'} /> : <LoginPage />} />
-        <Route path="/signup" element={user ? <Navigate to={user.role === 'admin' ? '/admin/dashboard' : '/dashboard'} /> : <SignupPage />} />
+        {/* Public Routes */}
+        <Route path="/login" element={user ? <Navigate to={['superadmin', 'faculty'].includes(user.role) ? '/management/dashboard' : '/dashboard'} /> : <LoginPage />} />
+        <Route path="/signup" element={user ? <Navigate to={['superadmin', 'faculty'].includes(user.role) ? '/management/dashboard' : '/dashboard'} /> : <SignupPage />} />
         <Route path="/auth/callback" element={<AuthCallbackPage />} />
         <Route path="/auth/confirm-email" element={<EmailConfirmationPage />} />
 
@@ -83,12 +84,13 @@ export default function AppRouter() {
         </Route>
 
         {/* Admin Routes */}
-        <Route path="/admin" element={
-          <ProtectedRoute allowedRoles={['admin']}>
-            <AdminLayout />
+        {/* Management Routes (Superadmin & Faculty) */}
+        <Route path="/management" element={
+          <ProtectedRoute allowedRoles={['superadmin', 'faculty']}>
+            <ManagementLayout />
           </ProtectedRoute>
         }>
-          <Route index element={<Navigate to="/admin/dashboard" replace />} />
+          <Route index element={<Navigate to="/management/dashboard" replace />} />
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="groups" element={<GroupsPage />} />
           <Route path="notes" element={<NotesModeration />} />
@@ -98,7 +100,8 @@ export default function AppRouter() {
         </Route>
 
         {/* Fallback */}
-        <Route path="*" element={<Navigate to={user ? (user.role === 'admin' ? '/admin/dashboard' : '/dashboard') : '/login'} replace />} />
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to={user ? (['superadmin', 'faculty'].includes(user.role) ? '/management/dashboard' : '/dashboard') : '/login'} replace />} />
       </Routes>
     </BrowserRouter>
   );

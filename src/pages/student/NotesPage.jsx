@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
-import { fetchNotes, fetchSubjects, uploadNote } from '../../services/notesService';
+import { fetchNotes, fetchSubjects, uploadNote, rateNote } from '../../services/notesService';
 import { FileText, Download, Star, Search, Filter, Grid3X3, List, Upload, X, Tag, Clock, User, ChevronDown } from 'lucide-react';
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.05 } } };
@@ -84,12 +84,32 @@ export default function NotesPage() {
     }
   };
 
+  const handleRate = async (noteId) => {
+    const ratingStr = prompt('Enter a rating from 1 to 5:');
+    if (!ratingStr) return;
+    const rating = parseInt(ratingStr);
+    if (isNaN(rating) || rating < 1 || rating > 5) {
+      return alert('Rating must be a number between 1 and 5');
+    }
+    const review = prompt('Enter an optional review:');
+
+    try {
+      await rateNote(noteId, rating, review);
+      // Optimistically update rating (simplified)
+      setNotes(notes.map(n => n.id === noteId ? { ...n, rating, totalRatings: n.totalRatings + 1 } : n));
+      alert('Rating submitted successfully!');
+    } catch (err) {
+      console.error('Rate note error:', err);
+      alert('Failed to rate note: ' + err.message);
+    }
+  };
+
   const renderStars = (rating) => (
     <div className="flex items-center gap-0.5">
       {[1, 2, 3, 4, 5].map(i => (
         <Star key={i} className={`w-3.5 h-3.5 ${i <= Math.round(rating) ? 'text-gold-400 fill-gold-400' : 'text-gray-300 dark:text-gray-600'}`} />
       ))}
-      <span className="text-xs text-gray-500 ml-1">{rating}</span>
+      <span className="text-xs text-gray-500 ml-1">{rating ? rating.toFixed(1) : 0}</span>
     </div>
   );
 
@@ -176,8 +196,13 @@ export default function NotesPage() {
               <div className="mt-auto pt-3 border-t border-gray-100 dark:border-dark-border/50">
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-gray-500">{note.subject}</span>
-                  <div className="flex items-center gap-1 text-xs text-gray-400">
-                    <Download className="w-3 h-3" /> {note.downloads}
+                  <div className="flex items-center gap-3">
+                    <button onClick={() => handleRate(note.id)} className="flex items-center gap-1 text-xs text-gray-400 hover:text-gold-500 transition-colors" title="Rate this note">
+                      {renderStars(note.rating)}
+                    </button>
+                    <div className="flex items-center gap-1 text-xs text-gray-400">
+                      <Download className="w-3 h-3" /> {note.downloads}
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center justify-between mt-2 text-xs text-gray-400">
@@ -213,6 +238,9 @@ export default function NotesPage() {
                 </div>
               </div>
               <div className="hidden sm:flex items-center gap-4 flex-shrink-0">
+                <button onClick={() => handleRate(note.id)} className="flex items-center gap-1 text-xs text-gray-400 hover:text-gold-500 transition-colors" title="Rate this note">
+                  {renderStars(note.rating)}
+                </button>
                 <div className="flex items-center gap-1 text-sm text-gray-500"><Download className="w-4 h-4" /> {note.downloads}</div>
                 <button className="btn-secondary text-sm py-1.5 px-3">Download</button>
               </div>

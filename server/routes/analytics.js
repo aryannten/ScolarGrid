@@ -4,12 +4,12 @@ const router = express.Router();
 function auth() {
   return (req, res, next) => req.app.locals.authenticateJWT(req, res, next);
 }
-function admin() {
-  return (req, res, next) => req.app.locals.requireAdmin(req, res, next);
+function roles(r) {
+  return (req, res, next) => req.app.locals.requireRoles(r)(req, res, next);
 }
 
 // GET /api/analytics
-router.get('/', auth(), admin(), async (req, res) => {
+router.get('/', auth(), roles(['superadmin', 'faculty']), async (req, res) => {
   try {
     const db = req.app.locals.db;
 
