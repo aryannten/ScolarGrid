@@ -34,7 +34,7 @@
 | **Backend** | Node.js, Express.js |
 | **Real-time** | WebSocket (`ws`) |
 | **Auth** | JWT (JSON Web Tokens) + bcrypt |
-| **Database** | In-memory JSON store (`server/data.json`) — no SQL setup needed |
+| **Database** | MySQL |
 | **File Uploads** | Multer (avatars, notes, chat files) |
 
 ---
@@ -45,8 +45,8 @@
 scholargridddd/
 ├── server/                  # Node.js backend
 │   ├── app.js               # Express server entry point
-│   ├── db.js                # In-memory database + persistence logic
-│   ├── data.json            # Persisted database (auto-generated)
+│   ├── db.js                # MySQL connection pool
+│   ├── mysql_schema.sql     # Database schema definition
 │   └── routes/
 │       ├── auth.js          # Login, signup, /me
 │       ├── users.js         # User management
@@ -80,13 +80,14 @@ scholargridddd/
 ### Prerequisites
 - [Node.js](https://nodejs.org/) v18 or higher
 - npm v9 or higher
+- MySQL Server (v8.0+)
 
 ### Installation
 
 ```bash
 # 1. Clone the repository
-git clone <your-repo-url>
-cd scholargridddd
+git clone https://github.com/aryannten/ScolarGrid.git
+cd ScolarGrid
 
 # 2. Install frontend dependencies
 npm install
@@ -94,6 +95,23 @@ npm install
 # 3. Install backend dependencies
 npm install --prefix server
 ```
+
+### Database Setup
+
+1. Start your local MySQL server.
+2. Create the database and tables using the provided schema:
+   ```bash
+   mysql -u root -p < server/mysql_schema.sql
+   ```
+3. Create a `.env` file in the root directory (and `server/` directory) with your database credentials:
+   ```env
+   PORT=3001
+   JWT_SECRET=scholargrid-dev-secret-key-2026
+   DB_HOST=127.0.0.1
+   DB_USER=root
+   DB_PASSWORD=your_password
+   DB_NAME=scholargrid_db
+   ```
 
 ### Running Locally
 
@@ -113,8 +131,9 @@ This starts both servers concurrently:
 
 | Role | Email | Password |
 |---|---|---|
-| Super Admin | `admin@scholargrid.com` | `admin123` |
-| Student (test) | `student@test.com` | `student123` |
+| Super Admin | `admin@scholargrid.com` | `password123` |
+| Faculty | `meetpatil0267@gmail.com` | `password123` |
+| Student (test) | `test4@example.com` | `password123` |
 
 ### Faculty Upgrade Code
 Students can upgrade to faculty from their Profile page using the registration code:
@@ -148,11 +167,11 @@ FACULTY-2026
 
 ## 💾 Database
 
-ScholarGrid uses a **lightweight in-memory database** backed by `server/data.json`. No MySQL, PostgreSQL, or SQLite setup is required.
+ScholarGrid uses a **MySQL Database** for robust, production-ready data persistence.
 
-- Data is **automatically loaded** from `data.json` on server start
-- Data is **saved back to disk** after every write operation
-- The file is created automatically if it doesn't exist
+- The complete relational schema with foreign key constraints is defined in `server/mysql_schema.sql`.
+- Database connections are pooled and managed asynchronously via the `mysql2/promise` package.
+- All relationships (such as Group Memberships, Notes Ratings, and Leaderboard Points) are managed seamlessly using native SQL joins.
 
 ---
 
@@ -171,7 +190,7 @@ ScholarGrid uses a **lightweight in-memory database** backed by `server/data.jso
 - Passwords are hashed with **bcrypt** (10 salt rounds)
 - All protected routes require a **JWT Bearer token** in the `Authorization` header
 - Tokens are stored in `localStorage` and cleared on logout
-- `server/data.json` contains hashed passwords — **do not share this file publicly**
+- Ensure you do not expose your `.env` database credentials in public repositories.
 
 ---
 
