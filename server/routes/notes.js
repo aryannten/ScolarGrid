@@ -6,56 +6,62 @@ function auth() { return (req, res, next) => req.app.locals.authenticateJWT(req,
 function roles(r) { return (req, res, next) => req.app.locals.requireRoles(r)(req, res, next); }
 
 // GET /api/notes
-router.get('/', auth(), (req, res) => {
+router.get('/', auth(), async (req, res) => {
   try {
-    const { store } = req.app.locals;
+    const { db } = req.app.locals;
     const { subject, search, sortBy, limit } = req.query;
 
-    let notes = [...store.notes];
+    let query = `
+      SELECT n.*, p.full_name as uploader_name, p.avatar_url as uploader_avatar,
+        (SELECT AVG(rating) FROM note_ratings WHERE note_id = n.id) as avg_rating,
+        (SELECT COUNT(*) FROM note_ratings WHERE note_id = n.id) as rating_count
+      FROM notes n
+      LEFT JOIN profiles p ON n.uploader_id = p.id
+      WHERE 1=1
+    `;
+    const params = [];
 
     if (subject && subject !== 'All') {
-      notes = notes.filter(n => n.subject === subject);
+      query += ' AND n.subject = ?';
+      params.push(subject);
     }
     if (search) {
-      const s = search.toLowerCase();
-      notes = notes.filter(n => (n.title || '').toLowerCase().includes(s) || (n.description || '').toLowerCase().includes(s));
+      query += ' AND (LOWER(n.title) LIKE ? OR LOWER(n.description) LIKE ?)';
+      params.push(`%${search.toLowerCase()}%`, `%${search.toLowerCase()}%`);
     }
 
-    // Enrich with uploader info and ratings
-    const enriched = notes.map(n => {
-      const uploader = store.profiles.find(p => p.id === n.uploader_id);
-      const ratings = store.note_ratings.filter(r => r.note_id === n.id);
-      const avgRating = ratings.length > 0 ? ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length : 0;
-      return { ...n, uploader_name: uploader?.full_name || 'Unknown', uploader_avatar: uploader?.avatar_url, avg_rating: avgRating, rating_count: ratings.length };
-    });
+    if (sortBy === 'downloads') query += ' ORDER BY n.downloads DESC';
+    else if (sortBy === 'rating') query += ' ORDER BY avg_rating DESC';
+    else query += ' ORDER BY n.created_at DESC';
 
-    if (sortBy === 'downloads') enriched.sort((a, b) => b.downloads - a.downloads);
-    else if (sortBy === 'rating') enriched.sort((a, b) => b.avg_rating - a.avg_rating);
-    else enriched.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    if (limit) {
+      query += ' LIMIT ?';
+      params.push(parseInt(limit));
+    }
 
-    const result = limit ? enriched.slice(0, parseInt(limit)) : enriched;
-    res.json(result.map(mapNote));
+    const [notes] = await db.query(query, params);
+    res.json(notes.map(mapNote));
   } catch (err) { console.error('Fetch notes error:', err); res.status(500).json({ error: 'Internal server error' }); }
 });
 
 // GET /api/notes/subjects
-router.get('/subjects', auth(), (req, res) => {
+router.get('/subjects', auth(), async (req, res) => {
   try {
-    const { store } = req.app.locals;
-    const subjects = [...new Set(store.notes.map(n => n.subject))].sort();
-    res.json(subjects);
+    const { db } = req.app.locals;
+    const [rows] = await db.query('SELECT DISTINCT subject FROM notes ORDER BY subject');
+    res.json(rows.map(r => r.subject));
   } catch (err) { console.error('Subjects error:', err); res.status(500).json({ error: 'Internal server error' }); }
 });
 
 // POST /api/notes
 router.post('/', auth(), (req, res, next) => {
   req.app.locals.upload.single('note')(req, res, next);
-}, (req, res) => {
+}, async (req, res) => {
   try {
-    const { store, saveToDisk } = req.app.locals;
+    const { db } = req.app.locals;
     const noteId = uuidv4();
     const { title, description, subject } = req.body;
-    const now = new Date().toISOString();
+    const now = new Date();
 
     const note = {
       id: noteId, uploader_id: req.user.id, title, description: description || '',
@@ -66,101 +72,86 @@ router.post('/', auth(), (req, res, next) => {
       file_size: req.file ? req.file.size : 0,
       is_flagged: 0, is_approved: 1, downloads: 0, created_at: now,
     };
-    store.notes.push(note);
+
+    await db.query(`
+      INSERT INTO notes (id, uploader_id, title, description, subject, file_url, file_name, file_type, file_size, is_flagged, is_approved, downloads, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [note.id, note.uploader_id, note.title, note.description, note.subject, note.file_url, note.file_name, note.file_type, note.file_size, note.is_flagged, note.is_approved, note.downloads, note.created_at]);
 
     // Award points
-    store.leaderboard_points.push({ id: uuidv4(), user_id: req.user.id, points: 10, reason: 'note_upload', reference_id: noteId, created_at: now });
-    const profile = store.profiles.find(p => p.id === req.user.id);
-    if (profile) profile.points = (profile.points || 0) + 10;
+    await db.query('INSERT INTO leaderboard_points (id, user_id, points, reason, reference_id, created_at) VALUES (?, ?, ?, ?, ?, ?)', [uuidv4(), req.user.id, 10, 'note_upload', noteId, now]);
+    await db.query('UPDATE profiles SET points = points + 10 WHERE id = ?', [req.user.id]);
 
-    saveToDisk();
-
-    const uploader = store.profiles.find(p => p.id === req.user.id);
+    const [profiles] = await db.query('SELECT * FROM profiles WHERE id = ?', [req.user.id]);
+    const uploader = profiles[0];
     res.status(201).json(mapNote({ ...note, uploader_name: uploader?.full_name || 'Unknown', uploader_avatar: uploader?.avatar_url, avg_rating: 0, rating_count: 0 }));
   } catch (err) { console.error('Upload note error:', err); res.status(500).json({ error: 'Internal server error' }); }
 });
 
 // DELETE /api/notes/:id
-router.delete('/:id', auth(), (req, res) => {
+router.delete('/:id', auth(), async (req, res) => {
   try {
-    const { store, saveToDisk } = req.app.locals;
-    const idx = store.notes.findIndex(n => n.id === req.params.id);
-    if (idx === -1) return res.status(404).json({ error: 'Note not found' });
-    const note = store.notes[idx];
+    const { db } = req.app.locals;
+    const [notes] = await db.query('SELECT * FROM notes WHERE id = ?', [req.params.id]);
+    if (notes.length === 0) return res.status(404).json({ error: 'Note not found' });
+    const note = notes[0];
+    
     if (note.uploader_id !== req.user.id && !['superadmin', 'faculty'].includes(req.user.role)) return res.status(403).json({ error: 'Forbidden' });
-    store.notes.splice(idx, 1);
-    store.note_ratings = store.note_ratings.filter(r => r.note_id !== req.params.id);
-    saveToDisk();
+    await db.query('DELETE FROM notes WHERE id = ?', [req.params.id]);
     res.json({ success: true });
   } catch (err) { console.error('Delete note error:', err); res.status(500).json({ error: 'Internal server error' }); }
 });
 
 // PUT /api/notes/:id/flag
-router.put('/:id/flag', auth(), roles(['superadmin', 'faculty']), (req, res) => {
+router.put('/:id/flag', auth(), roles(['superadmin', 'faculty']), async (req, res) => {
   try {
-    const { store, saveToDisk } = req.app.locals;
-    const note = store.notes.find(n => n.id === req.params.id);
-    if (note) { note.is_flagged = req.body.flagged ? 1 : 0; saveToDisk(); }
+    const { db } = req.app.locals;
+    await db.query('UPDATE notes SET is_flagged = ? WHERE id = ?', [req.body.flagged ? 1 : 0, req.params.id]);
     res.json({ success: true });
   } catch (err) { console.error('Flag error:', err); res.status(500).json({ error: 'Internal server error' }); }
 });
 
 // PUT /api/notes/:id/approve
-router.put('/:id/approve', auth(), roles(['superadmin', 'faculty']), (req, res) => {
+router.put('/:id/approve', auth(), roles(['superadmin', 'faculty']), async (req, res) => {
   try {
-    const { store, saveToDisk } = req.app.locals;
-    const note = store.notes.find(n => n.id === req.params.id);
-    if (note) { note.is_approved = req.body.approved ? 1 : 0; saveToDisk(); }
+    const { db } = req.app.locals;
+    await db.query('UPDATE notes SET is_approved = ? WHERE id = ?', [req.body.approved ? 1 : 0, req.params.id]);
     res.json({ success: true });
   } catch (err) { console.error('Approve error:', err); res.status(500).json({ error: 'Internal server error' }); }
 });
 
 // POST /api/notes/:id/rate
-router.post('/:id/rate', auth(), (req, res) => {
+router.post('/:id/rate', auth(), async (req, res) => {
   try {
-    const { store, saveToDisk } = req.app.locals;
-    const { rating, review } = req.body;
+    const { db } = req.app.locals;
+    const { rating } = req.body;
     if (!rating || rating < 1 || rating > 5) return res.status(400).json({ error: 'Rating must be 1-5' });
 
-    const existing = store.note_ratings.find(r => r.note_id === req.params.id && r.user_id === req.user.id);
-    if (existing) {
-      existing.rating = rating;
-      existing.review = review || null;
+    const [existing] = await db.query('SELECT id FROM note_ratings WHERE note_id = ? AND user_id = ?', [req.params.id, req.user.id]);
+    if (existing.length > 0) {
+      await db.query('UPDATE note_ratings SET rating = ? WHERE id = ?', [rating, existing[0].id]);
     } else {
-      store.note_ratings.push({ id: uuidv4(), note_id: req.params.id, user_id: req.user.id, rating, review: review || null, created_at: new Date().toISOString() });
+      await db.query('INSERT INTO note_ratings (id, note_id, user_id, rating, created_at) VALUES (?, ?, ?, ?, ?)', [uuidv4(), req.params.id, req.user.id, rating, new Date()]);
     }
-    saveToDisk();
     res.json({ success: true });
   } catch (err) { console.error('Rate error:', err); res.status(500).json({ error: 'Internal server error' }); }
 });
 
 // GET /api/notes/:id/download
-router.get('/:id/download', auth(), (req, res) => {
+router.get('/:id/download', auth(), async (req, res) => {
   try {
-    const { store, saveToDisk } = req.app.locals;
-    const note = store.notes.find(n => n.id === req.params.id);
-    if (!note) return res.status(404).json({ error: 'Note not found' });
+    const { db } = req.app.locals;
+    const [notes] = await db.query('SELECT * FROM notes WHERE id = ?', [req.params.id]);
+    if (notes.length === 0) return res.status(404).json({ error: 'Note not found' });
+    const note = notes[0];
     
-    note.downloads = (note.downloads || 0) + 1;
+    await db.query('UPDATE notes SET downloads = downloads + 1 WHERE id = ?', [note.id]);
     
-    // Award points to uploader for the download
-    if (note.uploader_id !== req.user.id) { // Don't award points if downloading own note
-      const uploaderProfile = store.profiles.find(p => p.id === note.uploader_id);
-      if (uploaderProfile) {
-        uploaderProfile.points = (uploaderProfile.points || 0) + 2;
-        store.leaderboard_points.push({
-          id: require('uuid').v4(),
-          user_id: note.uploader_id,
-          points: 2,
-          reason: 'note_download',
-          reference_id: note.id,
-          created_at: new Date().toISOString()
-        });
-      }
+    if (note.uploader_id !== req.user.id) {
+      await db.query('UPDATE profiles SET points = points + 2 WHERE id = ?', [note.uploader_id]);
+      await db.query('INSERT INTO leaderboard_points (id, user_id, points, reason, reference_id, created_at) VALUES (?, ?, ?, ?, ?, ?)', [uuidv4(), note.uploader_id, 2, 'note_download', note.id, new Date()]);
     }
 
-    saveToDisk();
-    
     return res.json({ success: true, fileUrl: note.file_url });
   } catch (err) {
     console.error('Download metadata error:', err);
@@ -175,7 +166,7 @@ function mapNote(row) {
     id: row.id, title: row.title, description: row.description || '', subject: row.subject,
     tags: row.subject ? [row.subject] : [], uploaderId: row.uploader_id,
     uploaderName: row.uploader_name || 'Unknown',
-    createdAt: row.created_at ? row.created_at.split('T')[0] : '',
+    createdAt: row.created_at ? new Date(row.created_at).toISOString().split('T')[0] : '',
     fileType: getFileTypeLabel(row.file_type), fileSize: formatFileSize(row.file_size),
     fileUrl: row.file_url, fileName: row.file_name,
     downloads: row.downloads || 0, rating: row.avg_rating ? parseFloat(row.avg_rating) : 0,

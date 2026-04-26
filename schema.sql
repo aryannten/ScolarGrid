@@ -1,7 +1,7 @@
--- ============================================================
--- ScholarGrid — Complete Supabase Setup
+﻿-- ============================================================
+-- ScholarGrid ΓÇö Complete Supabase Setup
 -- Run this ENTIRE file in your Supabase SQL Editor (one time)
--- Go to: https://supabase.com/dashboard → Your Project → SQL Editor → New Query → Paste this → Run
+-- Go to: https://supabase.com/dashboard ΓåÆ Your Project ΓåÆ SQL Editor ΓåÆ New Query ΓåÆ Paste this ΓåÆ Run
 -- ============================================================
 
 -- =====================

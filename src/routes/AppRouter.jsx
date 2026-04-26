@@ -9,8 +9,6 @@ import ManagementLayout from '../components/layout/AdminLayout'; // Reusing the 
 // Auth pages
 import LoginPage from '../pages/auth/LoginPage';
 import SignupPage from '../pages/auth/SignupPage';
-import AuthCallbackPage from '../pages/auth/AuthCallbackPage';
-import EmailConfirmationPage from '../pages/auth/EmailConfirmationPage';
 
 // Student pages
 import StudentDashboard from '../pages/student/Dashboard';
@@ -62,11 +60,8 @@ export default function AppRouter() {
     <BrowserRouter>
       <Routes>
         {/* Public Routes */}
-        {/* Public Routes */}
         <Route path="/login" element={user ? <Navigate to={['superadmin', 'faculty'].includes(user.role) ? '/management/dashboard' : '/dashboard'} /> : <LoginPage />} />
         <Route path="/signup" element={user ? <Navigate to={['superadmin', 'faculty'].includes(user.role) ? '/management/dashboard' : '/dashboard'} /> : <SignupPage />} />
-        <Route path="/auth/callback" element={<AuthCallbackPage />} />
-        <Route path="/auth/confirm-email" element={<EmailConfirmationPage />} />
 
         {/* Student Routes */}
         <Route path="/" element={
@@ -99,7 +94,6 @@ export default function AppRouter() {
           <Route path="analytics" element={<AnalyticsPage />} />
         </Route>
 
-        {/* Fallback */}
         {/* Fallback */}
         <Route path="*" element={<Navigate to={user ? (['superadmin', 'faculty'].includes(user.role) ? '/management/dashboard' : '/dashboard') : '/login'} replace />} />
       </Routes>

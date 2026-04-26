@@ -7,47 +7,45 @@ const { v4: uuidv4 } = require('uuid');
 // POST /api/auth/signup
 router.post('/signup', async (req, res) => {
   try {
-    const { store, saveToDisk } = req.app.locals;
+    const { db } = req.app.locals;
     const { name, email, password, role } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
-    const existing = store.profiles.find(p => p.email === email);
-    if (existing) {
+    const [existing] = await db.query('SELECT * FROM profiles WHERE email = ?', [email]);
+    if (existing.length > 0) {
       return res.status(409).json({ error: 'Email already registered' });
     }
 
     const id = uuidv4();
     const password_hash = await bcrypt.hash(password, 10);
     const userRole = role || 'student';
-    const now = new Date().toISOString();
 
     if (userRole === 'faculty') {
       const { faculty_code } = req.body;
       if (!faculty_code) {
         return res.status(400).json({ error: 'Faculty code is required for faculty registration' });
       }
-      const codeEntry = store.faculty_codes.find(c => c.code === faculty_code && !c.is_used);
-      if (!codeEntry) {
+      const [codes] = await db.query('SELECT * FROM faculty_codes WHERE code = ?', [faculty_code]);
+      if (codes.length === 0 || codes[0].is_used) {
         return res.status(400).json({ error: 'Invalid or already used faculty code' });
       }
-      codeEntry.is_used = 1;
-      codeEntry.used_by = id;
+      await db.query('UPDATE faculty_codes SET is_used = 1, used_by = ? WHERE code = ?', [id, faculty_code]);
     }
 
-    const profile = {
-      id, email, password_hash, full_name: name || '', role: userRole,
-      about: '', avatar_url: null, points: 0, warnings: 0, is_banned: 0,
-      created_at: now, updated_at: now,
-    };
-    store.profiles.push(profile);
-    saveToDisk();
+    await db.query(`
+      INSERT INTO profiles (id, email, password_hash, full_name, role) 
+      VALUES (?, ?, ?, ?, ?)
+    `, [id, email, password_hash, name || '', userRole]);
+
+    const [profiles] = await db.query('SELECT * FROM profiles WHERE id = ?', [id]);
+    const profile = profiles[0];
 
     const token = jwt.sign({ id, role: userRole }, req.app.locals.JWT_SECRET, { expiresIn: '7d' });
 
-    res.status(201).json({ token, user: mapProfile(profile, store.notes) });
+    res.status(201).json({ token, user: mapProfile(profile, []) });
   } catch (err) {
     console.error('Signup error:', err);
     res.status(500).json({ error: 'Internal server error' });
@@ -57,17 +55,18 @@ router.post('/signup', async (req, res) => {
 // POST /api/auth/login
 router.post('/login', async (req, res) => {
   try {
-    const { store } = req.app.locals;
+    const { db } = req.app.locals;
     const { email, password } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
-    const profile = store.profiles.find(p => p.email === email);
-    if (!profile) {
+    const [profiles] = await db.query('SELECT * FROM profiles WHERE email = ?', [email]);
+    if (profiles.length === 0) {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
+    const profile = profiles[0];
 
     if (profile.is_banned) {
       return res.status(403).json({ error: 'Your account has been banned' });
@@ -84,7 +83,8 @@ router.post('/login', async (req, res) => {
       { expiresIn: '7d' }
     );
 
-    res.json({ token, user: mapProfile(profile, store.notes) });
+    const [notes] = await db.query('SELECT * FROM notes WHERE uploader_id = ?', [profile.id]);
+    res.json({ token, user: mapProfile(profile, notes) });
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ error: 'Internal server error' });
@@ -92,12 +92,15 @@ router.post('/login', async (req, res) => {
 });
 
 // GET /api/auth/me
-router.get('/me', (req, res, next) => req.app.locals.authenticateJWT(req, res, next), (req, res) => {
+router.get('/me', (req, res, next) => req.app.locals.authenticateJWT(req, res, next), async (req, res) => {
   try {
-    const { store } = req.app.locals;
-    const profile = store.profiles.find(p => p.id === req.user.id);
-    if (!profile) return res.status(404).json({ error: 'User not found' });
-    res.json({ user: mapProfile(profile, store.notes) });
+    const { db } = req.app.locals;
+    const [profiles] = await db.query('SELECT * FROM profiles WHERE id = ?', [req.user.id]);
+    if (profiles.length === 0) return res.status(404).json({ error: 'User not found' });
+    const profile = profiles[0];
+    
+    const [notes] = await db.query('SELECT * FROM notes WHERE uploader_id = ?', [profile.id]);
+    res.json({ user: mapProfile(profile, notes) });
   } catch (err) {
     console.error('Me error:', err);
     res.status(500).json({ error: 'Internal server error' });
@@ -119,7 +122,7 @@ function mapProfile(row, notes = []) {
   return {
     id: row.id, name: row.full_name || '', email: row.email, role: row.role,
     avatar: row.avatar_url, about: row.about || '',
-    joinedAt: row.created_at ? row.created_at.split('T')[0] : '',
+    joinedAt: row.created_at ? new Date(row.created_at).toISOString().split('T')[0] : '',
     score: row.points || 0, points: row.points || 0, tier: getTier(row.points || 0),
     uploads: uploadsCount, downloads: downloadsCount, warnings: row.warnings || 0,
     is_banned: row.is_banned ? true : false,

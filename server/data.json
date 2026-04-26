@@ -215,7 +215,7 @@
       "email": "aryannyadav09@gmail.com",
       "password_hash": "$2a$10$roDX.vD7ltSeeTDB5gddhuycfXClVVTk3dUnzNYvCGF0pxl3sQfce",
       "full_name": "aryan",
-      "role": "student",
+      "role": "faculty",
       "about": "",
       "avatar_url": null,
       "points": 0,
@@ -223,6 +223,20 @@
       "is_banned": 0,
       "created_at": "2026-04-26T16:32:17.663Z",
       "updated_at": "2026-04-26T16:32:17.663Z"
+    },
+    {
+      "id": "2226335f-abac-4c7a-bdf2-38f90c567488",
+      "email": "testuser2026@test.com",
+      "password_hash": "$2a$10$HmVN/Y1Rp5/cTaxR/yJ7j.euFN2kqpWU1qydHOnLs2X/xDvDT3Zpy",
+      "full_name": "Test Student",
+      "role": "student",
+      "about": "",
+      "avatar_url": null,
+      "points": 0,
+      "warnings": 0,
+      "is_banned": 0,
+      "created_at": "2026-04-26T17:31:31.415Z",
+      "updated_at": "2026-04-26T17:31:31.415Z"
     }
   ],
   "faculty_codes": [

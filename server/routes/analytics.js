@@ -5,50 +5,48 @@ function auth() { return (req, res, next) => req.app.locals.authenticateJWT(req,
 function roles(r) { return (req, res, next) => req.app.locals.requireRoles(r)(req, res, next); }
 
 // GET /api/analytics
-router.get('/', auth(), roles(['superadmin', 'faculty']), (req, res) => {
+router.get('/', auth(), roles(['superadmin', 'faculty']), async (req, res) => {
   try {
-    const { store } = req.app.locals;
+    const { db } = req.app.locals;
 
-    const totalUsers = store.profiles.length;
-    const totalNotes = store.notes.length;
-    const totalDownloads = store.notes.reduce((sum, n) => sum + (n.downloads || 0), 0);
-    const activeChats = store.groups.length;
-    const openComplaints = store.complaints.filter(c => c.status === 'open').length;
-    const resolvedComplaints = store.complaints.filter(c => c.status === 'resolved').length;
+    const [[{ totalUsers }]] = await db.query('SELECT COUNT(*) as totalUsers FROM profiles');
+    const [[{ totalNotes }]] = await db.query('SELECT COUNT(*) as totalNotes FROM notes');
+    const [[{ totalDownloads }]] = await db.query('SELECT SUM(downloads) as totalDownloads FROM notes');
+    const [[{ activeChats }]] = await db.query('SELECT COUNT(*) as activeChats FROM \`groups\`');
+    const [[{ openComplaints }]] = await db.query('SELECT COUNT(*) as openComplaints FROM complaints WHERE status = "open"');
+    const [[{ resolvedComplaints }]] = await db.query('SELECT COUNT(*) as resolvedComplaints FROM complaints WHERE status = "resolved"');
 
     // Monthly data (last 12 months)
     const now = new Date();
-    const monthlyUploads = [];
-    const monthlyUsers = [];
+    const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), 1);
+
+    const [monthlyNotesData] = await db.query('SELECT YEAR(created_at) as y, MONTH(created_at) as m, COUNT(*) as c FROM notes WHERE created_at >= ? GROUP BY y, m', [oneYearAgo]);
+    const [monthlyUsersData] = await db.query('SELECT YEAR(created_at) as y, MONTH(created_at) as m, COUNT(*) as c FROM profiles WHERE created_at >= ? GROUP BY y, m', [oneYearAgo]);
+
+    const monthlyUploads = Array(12).fill(0);
+    const monthlyUsers = Array(12).fill(0);
 
     for (let i = 11; i >= 0; i--) {
-      const start = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const end = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
+      const targetYear = now.getFullYear() - (now.getMonth() - i < 0 ? 1 : 0);
+      const targetMonth = (now.getMonth() - i + 12) % 12 + 1; // 1-12
+      
+      const nData = monthlyNotesData.find(d => d.y === targetYear && d.m === targetMonth);
+      if (nData) monthlyUploads[11 - i] = nData.c;
 
-      monthlyUploads.push(store.notes.filter(n => {
-        const d = new Date(n.created_at);
-        return d >= start && d < end;
-      }).length);
-
-      monthlyUsers.push(store.profiles.filter(p => {
-        const d = new Date(p.created_at);
-        return d >= start && d < end;
-      }).length);
+      const uData = monthlyUsersData.find(d => d.y === targetYear && d.m === targetMonth);
+      if (uData) monthlyUsers[11 - i] = uData.c;
     }
 
     // Top subjects
-    const subjectCounts = {};
-    store.notes.forEach(n => { subjectCounts[n.subject] = (subjectCounts[n.subject] || 0) + 1; });
-    const topSubjects = Object.entries(subjectCounts)
-      .map(([subject, count]) => ({ subject, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 5);
+    const [topSubjects] = await db.query('SELECT subject, COUNT(*) as count FROM notes GROUP BY subject ORDER BY count DESC LIMIT 5');
 
     res.json({
-      totalUsers, totalNotes, totalDownloads, activeChats,
+      totalUsers, totalNotes, 
+      totalDownloads: totalDownloads || 0, 
+      activeChats,
       openComplaints, resolvedComplaints,
-      monthlyUploads: monthlyUploads.length > 0 ? monthlyUploads : Array(12).fill(0),
-      monthlyUsers: monthlyUsers.length > 0 ? monthlyUsers : Array(12).fill(0),
+      monthlyUploads,
+      monthlyUsers,
       topSubjects: topSubjects.length > 0 ? topSubjects : [{ subject: 'No data', count: 0 }],
     });
   } catch (err) { console.error('Analytics error:', err); res.status(500).json({ error: 'Internal server error' }); }

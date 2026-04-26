@@ -6,15 +6,18 @@ const cors = require('cors');
 const WebSocket = require('ws');
 const multer = require('multer');
 const fs = require('fs');
-const { initDb, store, saveToDisk } = require('./db');
+const { initDb, pool } = require('./db');
 
 const app = express();
 const server = http.createServer(app);
 
 // ── Initialize Database ────────────────────────────────────
-initDb();
-app.locals.store = store;
-app.locals.saveToDisk = saveToDisk;
+initDb().then(() => {
+  app.locals.db = pool;
+}).catch(err => {
+  console.error('Failed to initialize database', err);
+  process.exit(1);
+});
 
 // ── Middleware ──────────────────────────────────────────────
 app.use(cors());
@@ -128,5 +131,5 @@ const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
   console.log(`✅ ScholarGrid API running on http://localhost:${PORT}`);
   console.log(`📡 WebSocket server ready`);
-  console.log(`💾 Using in-memory database (no MySQL/SQLite needed)`);
+  console.log(`💾 Using MySQL database`);
 });

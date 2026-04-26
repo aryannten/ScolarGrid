@@ -6,59 +6,64 @@ function auth() { return (req, res, next) => req.app.locals.authenticateJWT(req,
 function superadmin() { return (req, res, next) => req.app.locals.requireSuperAdmin(req, res, next); }
 
 // GET /api/complaints
-router.get('/', auth(), (req, res) => {
+router.get('/', auth(), async (req, res) => {
   try {
-    const { store } = req.app.locals;
-    let complaints;
+    const { db } = req.app.locals;
+    let query = 'SELECT c.*, p.full_name as student_name FROM complaints c LEFT JOIN profiles p ON c.student_id = p.id';
+    const params = [];
 
-    if (['superadmin', 'faculty'].includes(req.user.role)) {
-      complaints = [...store.complaints];
-    } else {
-      complaints = store.complaints.filter(c => c.student_id === req.user.id);
+    if (!['superadmin', 'faculty'].includes(req.user.role)) {
+      query += ' WHERE c.student_id = ?';
+      params.push(req.user.id);
     }
 
-    complaints.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    query += ' ORDER BY c.created_at DESC';
 
-    const enriched = complaints.map(c => {
-      const student = store.profiles.find(p => p.id === c.student_id);
-      return mapComplaint({ ...c, student_name: student?.full_name });
-    });
-
-    res.json(enriched);
+    const [complaints] = await db.query(query, params);
+    res.json(complaints.map(mapComplaint));
   } catch (err) { console.error('Complaints error:', err); res.status(500).json({ error: 'Internal server error' }); }
 });
 
 // POST /api/complaints
-router.post('/', auth(), (req, res) => {
+router.post('/', auth(), async (req, res) => {
   try {
-    const { store, saveToDisk } = req.app.locals;
+    const { db } = req.app.locals;
     const { title, description } = req.body;
-    const now = new Date().toISOString();
-    const complaint = { id: uuidv4(), student_id: req.user.id, title, description, status: 'open', admin_reply: null, resolved_by: null, created_at: now, updated_at: now };
-    store.complaints.push(complaint);
-    saveToDisk();
+    const id = uuidv4();
+    const now = new Date();
 
-    const student = store.profiles.find(p => p.id === req.user.id);
-    res.status(201).json(mapComplaint({ ...complaint, student_name: student?.full_name }));
+    const complaint = { id, student_id: req.user.id, title, description, status: 'open', admin_reply: null, resolved_by: null, created_at: now, updated_at: now };
+    
+    await db.query('INSERT INTO complaints (id, student_id, title, description, status, admin_reply, resolved_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [id, req.user.id, title, description, 'open', null, null, now, now]);
+
+    const [profiles] = await db.query('SELECT full_name FROM profiles WHERE id = ?', [req.user.id]);
+    res.status(201).json(mapComplaint({ ...complaint, student_name: profiles[0]?.full_name }));
   } catch (err) { console.error('Create complaint error:', err); res.status(500).json({ error: 'Internal server error' }); }
 });
 
 // PUT /api/complaints/:id
-router.put('/:id', auth(), superadmin(), (req, res) => {
+router.put('/:id', auth(), superadmin(), async (req, res) => {
   try {
-    const { store, saveToDisk } = req.app.locals;
-    const complaint = store.complaints.find(c => c.id === req.params.id);
-    if (!complaint) return res.status(404).json({ error: 'Not found' });
+    const { db } = req.app.locals;
+    const [complaints] = await db.query('SELECT * FROM complaints WHERE id = ?', [req.params.id]);
+    if (complaints.length === 0) return res.status(404).json({ error: 'Not found' });
+    const complaint = complaints[0];
 
     const { status, adminReply } = req.body;
-    if (status) complaint.status = status;
-    if (adminReply !== undefined) complaint.admin_reply = adminReply;
-    if (status === 'resolved') complaint.resolved_by = req.user.id;
-    complaint.updated_at = new Date().toISOString();
-    saveToDisk();
+    let updates = [];
+    let values = [];
+    if (status) { updates.push('status = ?'); values.push(status); }
+    if (adminReply !== undefined) { updates.push('admin_reply = ?'); values.push(adminReply); }
+    if (status === 'resolved') { updates.push('resolved_by = ?'); values.push(req.user.id); }
+    
+    updates.push('updated_at = ?'); values.push(new Date());
+    
+    values.push(req.params.id);
+    await db.query(`UPDATE complaints SET ${updates.join(', ')} WHERE id = ?`, values);
 
-    const student = store.profiles.find(p => p.id === complaint.student_id);
-    res.json(mapComplaint({ ...complaint, student_name: student?.full_name }));
+    const [updated] = await db.query('SELECT c.*, p.full_name as student_name FROM complaints c LEFT JOIN profiles p ON c.student_id = p.id WHERE c.id = ?', [req.params.id]);
+    res.json(mapComplaint(updated[0]));
   } catch (err) { console.error('Update complaint error:', err); res.status(500).json({ error: 'Internal server error' }); }
 });
 
