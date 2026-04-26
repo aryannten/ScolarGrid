@@ -3,12 +3,13 @@ import { apiGet, apiPost, apiDelete, apiPut } from '../lib/apiClient';
 /**
  * Fetch notes with optional filters.
  */
-export async function fetchNotes({ subject, search, sortBy, limit } = {}) {
+export async function fetchNotes({ subject, search, sortBy, limit, minRating } = {}) {
   const params = new URLSearchParams();
   if (subject && subject !== 'All') params.set('subject', subject);
   if (search) params.set('search', search);
   if (sortBy) params.set('sortBy', sortBy);
   if (limit) params.set('limit', limit);
+  if (minRating) params.set('minRating', minRating);
 
   const qs = params.toString();
   return apiGet(`/api/notes${qs ? '?' + qs : ''}`);

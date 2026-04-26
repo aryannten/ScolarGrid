@@ -23,16 +23,17 @@ export default function AnalyticsPage() {
         fetchAnalytics(),
         fetchLeaderboard(6),
       ]);
-      setAnalytics(a);
-      setLeaderboard(lb);
+      setAnalytics(a || { totalUsers: 0, totalNotes: 0, totalDownloads: 0, activeChats: 0, monthlyUsers: Array(12).fill(0), monthlyUploads: Array(12).fill(0), topSubjects: [] });
+      setLeaderboard(Array.isArray(lb) ? lb : []);
     } catch (err) {
       console.error('Analytics error:', err);
+      setAnalytics({ totalUsers: 0, totalNotes: 0, totalDownloads: 0, activeChats: 0, monthlyUsers: Array(12).fill(0), monthlyUploads: Array(12).fill(0), topSubjects: [] });
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading || !analytics) {
+  if (loading) {
     return (
       <div className="space-y-6">
         <div className="h-8 w-48 rounded bg-gray-100 dark:bg-dark-surface animate-pulse" />

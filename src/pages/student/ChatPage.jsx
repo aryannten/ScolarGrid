@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { fetchUserGroups, joinGroup } from '../../services/groupsService';
-import { fetchMessages, sendMessage, subscribeToMessages, deleteMessage } from '../../services/messagesService';
+import { fetchMessages, sendMessage, sendFileMessage, subscribeToMessages, deleteMessage } from '../../services/messagesService';
 
 import { Search, Send, Paperclip, Hash, Users, Clock, Plus, X, Copy, Check, File, Trash2 } from 'lucide-react';
 
@@ -22,7 +22,9 @@ export default function ChatPage() {
   const [joining, setJoining] = useState(false);
   const [joinError, setJoinError] = useState('');
   const messagesEndRef = useRef(null);
+  const fileInputRef = useRef(null);
   const channelRef = useRef(null);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     if (user) loadGroups();
@@ -98,6 +100,32 @@ export default function ChatPage() {
     } catch (err) {
       console.error('Error sending message:', err);
       setNewMessage(content); // Restore on error
+    }
+  };
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedGroup || !user) return;
+
+    // Optional: Add file size limit check here
+    if (file.size > 10 * 1024 * 1024) { // 10MB limit
+      alert('File is too large. Maximum size is 10MB.');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const msg = await sendFileMessage(selectedGroup.id, user.id, file);
+      setMessages(prev => {
+        if (prev.find(m => m.id === msg.id)) return prev;
+        return [...prev, msg];
+      });
+    } catch (err) {
+      console.error('Error uploading file:', err);
+      alert('Failed to upload file: ' + err.message);
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
@@ -245,10 +273,17 @@ export default function ChatPage() {
                             : 'bg-gray-100 dark:bg-dark-hover text-gray-800 dark:text-gray-200 rounded-tl-sm'
                         }`}>
                           {msg.type === 'file' ? (
-                            <div className="flex items-center gap-2">
+                            <a 
+                              href={`http://localhost:3001${msg.fileUrl}`} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className={`flex items-center gap-2 hover:underline font-medium ${
+                                isOwn ? 'text-white' : 'text-brand-600 dark:text-brand-400'
+                              }`}
+                            >
                               <File className="w-4 h-4" />
                               <span className="text-sm">{msg.fileName || msg.content}</span>
-                            </div>
+                            </a>
                           ) : (
                             <p className="text-sm">{msg.content}</p>
                           )}
@@ -272,8 +307,23 @@ export default function ChatPage() {
             {/* Message Input */}
             <form onSubmit={handleSendMessage} className="px-4 lg:px-6 py-4 border-t border-light-border dark:border-dark-border/50">
               <div className="flex items-center gap-3">
-                <button type="button" className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-hover text-gray-400">
-                  <Paperclip className="w-5 h-5" />
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+                <button 
+                  type="button" 
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-hover text-gray-400 disabled:opacity-50"
+                >
+                  {uploading ? (
+                    <div className="w-5 h-5 border-2 border-gray-300 border-t-brand-500 rounded-full animate-spin" />
+                  ) : (
+                    <Paperclip className="w-5 h-5" />
+                  )}
                 </button>
                 <input
                   type="text"

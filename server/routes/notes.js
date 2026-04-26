@@ -142,6 +142,23 @@ router.get('/:id/download', auth(), (req, res) => {
     if (!note) return res.status(404).json({ error: 'Note not found' });
     
     note.downloads = (note.downloads || 0) + 1;
+    
+    // Award points to uploader for the download
+    if (note.uploader_id !== req.user.id) { // Don't award points if downloading own note
+      const uploaderProfile = store.profiles.find(p => p.id === note.uploader_id);
+      if (uploaderProfile) {
+        uploaderProfile.points = (uploaderProfile.points || 0) + 2;
+        store.leaderboard_points.push({
+          id: require('uuid').v4(),
+          user_id: note.uploader_id,
+          points: 2,
+          reason: 'note_download',
+          reference_id: note.id,
+          created_at: new Date().toISOString()
+        });
+      }
+    }
+
     saveToDisk();
     
     return res.json({ success: true, fileUrl: note.file_url });

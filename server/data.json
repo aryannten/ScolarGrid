@@ -3,7 +3,7 @@
     {
       "id": "a0000000-0000-0000-0000-000000000001",
       "email": "admin@scholargrid.com",
-      "password_hash": "$2a$10$NDXChV7.I.HCUVBQpfl4J.U.NF5gIZ6F3eOHXuC0xX3HMTcsMnTJq",
+      "password_hash": "$2a$10$jpqIGQy8Z1JMEtzn9xSSfOss9DOpr3t1ryTdzE5MZYQ2l9LuA7IQe",
       "full_name": "Super Admin User",
       "role": "superadmin",
       "about": "Platform administrator",
@@ -11,401 +11,563 @@
       "points": 0,
       "warnings": 0,
       "is_banned": 0,
-      "created_at": "2026-04-17T18:34:20.710Z",
-      "updated_at": "2026-04-17T18:34:20.710Z"
+      "created_at": "2026-04-19T08:39:24.221Z",
+      "updated_at": "2026-04-19T08:39:24.221Z"
     },
     {
-      "id": "f0000000-0000-0000-0000-000000000001",
-      "email": "faculty@scholargrid.com",
-      "password_hash": "$2a$10$pB57YMStAjqVuXB/mInMse2i19/k6F/76Qvtr8nBTQ9PtZBeKSl3a",
-      "full_name": "Faculty User",
-      "role": "faculty",
-      "about": "Computer Science Professor",
-      "avatar_url": null,
-      "points": 0,
-      "warnings": 0,
-      "is_banned": 0,
-      "created_at": "2026-04-17T18:34:20.710Z",
-      "updated_at": "2026-04-17T18:34:20.710Z"
-    },
-    {
-      "id": "s0000000-0000-0000-0000-000000000001",
-      "email": "alice@student.com",
-      "password_hash": "$2a$10$MhS3f/yqw4W/HJhjA7gCauAwYLr/CTSKJsSIkhQh2HwStcu/NC0i6",
-      "full_name": "Alice Johnson",
+      "id": "68a1c4e6-5d74-4ae1-9057-b74cf20704e9",
+      "email": "student@test.com",
+      "password_hash": "$2a$10$3jj9hMBYRLeDHw72uYUv4.SgNG1/9ntiYP0UEb2x8rhVt9KTzGOHO",
+      "full_name": "Student Test",
       "role": "student",
-      "about": "Computer Science major",
-      "avatar_url": null,
-      "points": 150,
-      "warnings": 0,
-      "is_banned": 0,
-      "created_at": "2026-04-17T18:34:20.710Z",
-      "updated_at": "2026-04-17T18:34:20.710Z"
-    },
-    {
-      "id": "s0000000-0000-0000-0000-000000000002",
-      "email": "bob@student.com",
-      "password_hash": "$2a$10$MhS3f/yqw4W/HJhjA7gCauAwYLr/CTSKJsSIkhQh2HwStcu/NC0i6",
-      "full_name": "Bob Smith",
-      "role": "student",
-      "about": "Mathematics enthusiast",
-      "avatar_url": null,
-      "points": 230,
-      "warnings": 0,
-      "is_banned": 0,
-      "created_at": "2026-04-17T18:34:20.710Z",
-      "updated_at": "2026-04-17T18:34:20.710Z"
-    },
-    {
-      "id": "s0000000-0000-0000-0000-000000000003",
-      "email": "carol@student.com",
-      "password_hash": "$2a$10$MhS3f/yqw4W/HJhjA7gCauAwYLr/CTSKJsSIkhQh2HwStcu/NC0i6",
-      "full_name": "Carol Williams",
-      "role": "student",
-      "about": "Physics student",
-      "avatar_url": null,
-      "points": 310,
-      "warnings": 0,
-      "is_banned": 0,
-      "created_at": "2026-04-17T18:34:20.710Z",
-      "updated_at": "2026-04-17T18:34:20.710Z"
-    },
-    {
-      "id": "s0000000-0000-0000-0000-000000000004",
-      "email": "dave@student.com",
-      "password_hash": "$2a$10$MhS3f/yqw4W/HJhjA7gCauAwYLr/CTSKJsSIkhQh2HwStcu/NC0i6",
-      "full_name": "Dave Brown",
-      "role": "student",
-      "about": "Engineering student",
-      "avatar_url": null,
-      "points": 80,
-      "warnings": 0,
-      "is_banned": 0,
-      "created_at": "2026-04-17T18:34:20.710Z",
-      "updated_at": "2026-04-17T18:34:20.710Z"
-    },
-    {
-      "id": "s0000000-0000-0000-0000-000000000005",
-      "email": "eve@student.com",
-      "password_hash": "$2a$10$MhS3f/yqw4W/HJhjA7gCauAwYLr/CTSKJsSIkhQh2HwStcu/NC0i6",
-      "full_name": "Eve Davis",
-      "role": "student",
-      "about": "Biology researcher",
-      "avatar_url": null,
-      "points": 420,
-      "warnings": 0,
-      "is_banned": 0,
-      "created_at": "2026-04-17T18:34:20.710Z",
-      "updated_at": "2026-04-17T18:34:20.710Z"
-    },
-    {
-      "id": "super-admin-master",
-      "email": "master@scholargrid.com",
-      "password_hash": "$2a$10$jceEIv3v3/UF3WoMXOryN.sxXrm/.LerJOwy9DCKPPORvCBi0UIXu",
-      "full_name": "Master Admin",
-      "role": "superadmin",
-      "about": "Permanent Unbreakable Super Admin",
-      "avatar_url": null,
-      "points": 0,
-      "warnings": 0,
-      "is_banned": 0,
-      "created_at": "2026-04-17T20:00:37.394Z",
-      "updated_at": "2026-04-17T20:00:37.433Z"
-    },
-    {
-      "id": "358abbe2-0935-4c89-8ab6-f8c39b6d3143",
-      "email": "aarohi@gmail.com",
-      "password_hash": "$2a$10$ZKKiDyzyhr9J/WwHsv/viewc0lVBDJd439ypA6dTzNudVF6kTpDWe",
-      "full_name": "aarohi patil",
-      "role": "faculty",
       "about": "",
       "avatar_url": null,
       "points": 10,
       "warnings": 0,
       "is_banned": 0,
-      "created_at": "2026-04-17T20:07:39.022Z",
-      "updated_at": "2026-04-17T20:07:39.022Z"
+      "created_at": "2026-04-19T08:49:04.198Z",
+      "updated_at": "2026-04-19T08:49:04.198Z"
+    },
+    {
+      "id": "0838be0d-6d50-4823-8ec2-e5f16db861c8",
+      "email": "meetpatil0267@gmail.com",
+      "password_hash": "$2a$10$LySJVdoNGNI0FZ6GQmSVvei8iR9ELaTF47/qmZKCh0Ro9C6cENID2",
+      "full_name": "meet patil",
+      "role": "faculty",
+      "about": "",
+      "avatar_url": null,
+      "points": 0,
+      "warnings": 0,
+      "is_banned": 0,
+      "created_at": "2026-04-19T08:56:30.550Z",
+      "updated_at": "2026-04-19T08:56:30.550Z"
+    },
+    {
+      "id": "86447ea6-d394-4181-957e-f859b3986a8a",
+      "email": "sanvipatil@gmail.com",
+      "password_hash": "$2a$10$zt7ko2SNvIEtpn12BYTTr.kV2JO8R806.rPtZfoJeiu8MlD7RcNEC",
+      "full_name": "sanvi patil",
+      "role": "student",
+      "about": "student at vit",
+      "avatar_url": null,
+      "points": 42,
+      "warnings": 0,
+      "is_banned": 0,
+      "created_at": "2026-04-19T08:58:14.845Z",
+      "updated_at": "2026-04-25T18:28:49.615Z"
+    },
+    {
+      "id": "8650e057-b3d7-490f-a5b6-846188cf58d1",
+      "email": "aarohipatil@gmail.com",
+      "password_hash": "$2a$10$7vF/eTUS16vm34Ln2BibKOevQZ6que1XRAGQCmf6BbXT9CluOfhnq",
+      "full_name": "aarohi patil",
+      "role": "student",
+      "about": "",
+      "avatar_url": null,
+      "points": 0,
+      "warnings": 0,
+      "is_banned": 0,
+      "created_at": "2026-04-19T09:03:19.866Z",
+      "updated_at": "2026-04-19T09:03:19.866Z"
+    },
+    {
+      "id": "31fb74ad-3fe6-4fb9-86b6-87935357a232",
+      "email": "arpita@gmail.com",
+      "password_hash": "$2a$10$xcA2uBj8.8CDKifYcA9.kObJ5fIs4uPMuOSu8pj8.epgzaVoXeCtO",
+      "full_name": "arpita vaity",
+      "role": "student",
+      "about": "",
+      "avatar_url": null,
+      "points": 0,
+      "warnings": 0,
+      "is_banned": 0,
+      "created_at": "2026-04-19T15:45:57.868Z",
+      "updated_at": "2026-04-19T15:45:57.868Z"
+    },
+    {
+      "id": "c3686b49-4732-4ae5-8504-d3539264f5a6",
+      "email": "test@example.com",
+      "password_hash": "$2a$10$rwWGlTtFLaDCbD0rrSEd7eDCmBCwFGKgXiRRp4ISAWQMJecPAmuwS",
+      "full_name": "Test User",
+      "role": "student",
+      "about": "",
+      "avatar_url": null,
+      "points": 0,
+      "warnings": 0,
+      "is_banned": 0,
+      "created_at": "2026-04-25T05:50:24.803Z",
+      "updated_at": "2026-04-25T05:50:24.803Z"
+    },
+    {
+      "id": "67dc81f2-d57f-4282-9433-c52b3c1a4bb7",
+      "email": "test_student_unique@test.com",
+      "password_hash": "$2a$10$ayQ83G1qqq/xRPNuLx.R5.vunv4IjSdUezhciFClLhvDQkPcJHBoe",
+      "full_name": "Test Student",
+      "role": "student",
+      "about": "",
+      "avatar_url": null,
+      "points": 0,
+      "warnings": 0,
+      "is_banned": 0,
+      "created_at": "2026-04-25T06:07:01.839Z",
+      "updated_at": "2026-04-25T06:07:01.839Z"
+    },
+    {
+      "id": "9f0be1fe-4c72-44af-a4ee-54a83f491d16",
+      "email": "newtest@test.com",
+      "password_hash": "$2a$10$xAKKyFBID5HFFUkx56DjN.EQ4RNRh/A.jkU933m2LOmQg6ZooGIfS",
+      "full_name": "New Test",
+      "role": "student",
+      "about": "",
+      "avatar_url": null,
+      "points": 0,
+      "warnings": 0,
+      "is_banned": 0,
+      "created_at": "2026-04-25T06:56:02.751Z",
+      "updated_at": "2026-04-25T06:56:02.751Z"
+    },
+    {
+      "id": "89edc182-81be-47c4-b6e4-414e03135719",
+      "email": "proxytest@test.com",
+      "password_hash": "$2a$10$l9pJHyu4nIPtfIvoLvtNHenr390JduT03qTFNHMSsrHau6qr.QxFO",
+      "full_name": "Proxy Test",
+      "role": "student",
+      "about": "",
+      "avatar_url": null,
+      "points": 0,
+      "warnings": 0,
+      "is_banned": 0,
+      "created_at": "2026-04-25T06:56:25.184Z",
+      "updated_at": "2026-04-25T06:56:25.184Z"
+    },
+    {
+      "id": "f563abbc-a9c6-4338-910c-216b38318fea",
+      "email": "debuguser123@test.com",
+      "password_hash": "$2a$10$mHeEKI88MbzD7.Au.HnrOer/7WpfeeBRu.bvM6VPIhiTyZ/u09kEa",
+      "full_name": "Debug User",
+      "role": "student",
+      "about": "",
+      "avatar_url": null,
+      "points": 0,
+      "warnings": 0,
+      "is_banned": 0,
+      "created_at": "2026-04-25T06:57:32.852Z",
+      "updated_at": "2026-04-25T06:57:32.852Z"
+    },
+    {
+      "id": "2b860f04-e096-4998-9890-6f1cf70c423b",
+      "email": "shriman@gmail.com",
+      "password_hash": "$2a$10$nKh3nMMoeEu5nsVDliK4weEsqcMK4PsoYk.eVAHPpbFvAYFssphkG",
+      "full_name": "shriman tavde",
+      "role": "student",
+      "about": "currently in 2nd year",
+      "avatar_url": null,
+      "points": 0,
+      "warnings": 0,
+      "is_banned": 0,
+      "created_at": "2026-04-25T07:04:39.791Z",
+      "updated_at": "2026-04-25T07:05:20.111Z"
+    },
+    {
+      "id": "75fd9035-fb16-470b-b59d-8d35d811ba08",
+      "email": "veena@gmail.com",
+      "password_hash": "$2a$10$sk/8h6Sj1RV6GfR52lvisOdX9EUJdGLwCAL85rIh8aVeBiW3QKb0e",
+      "full_name": "veena bhamre",
+      "role": "faculty",
+      "about": "",
+      "avatar_url": null,
+      "points": 0,
+      "warnings": 0,
+      "is_banned": 0,
+      "created_at": "2026-04-25T07:06:55.045Z",
+      "updated_at": "2026-04-25T07:06:55.045Z"
+    },
+    {
+      "id": "3759cfa4-a48b-4e5c-a9d9-e0bf532ecf68",
+      "email": "suresh@gmail.com",
+      "password_hash": "$2a$10$DlR6xvpXqVMdwyDGomiKzu7WH7/9ZOt9niexFEZP0yYUVyDULl4OW",
+      "full_name": "suresh rajput",
+      "role": "student",
+      "about": "",
+      "avatar_url": null,
+      "points": 10,
+      "warnings": 0,
+      "is_banned": 0,
+      "created_at": "2026-04-25T07:23:09.348Z",
+      "updated_at": "2026-04-25T07:23:09.348Z"
+    },
+    {
+      "id": "a05549ab-5e4e-4757-ae33-9e37e10e348e",
+      "email": "john.doe@example.com",
+      "password_hash": "$2a$10$Hb2gt564mal31q13e01CguaV0zjSCEXXN9mSuWXfV.1liOhsUuckK",
+      "full_name": "John Doe",
+      "role": "student",
+      "about": "",
+      "avatar_url": null,
+      "points": 0,
+      "warnings": 0,
+      "is_banned": 0,
+      "created_at": "2026-04-25T17:24:33.273Z",
+      "updated_at": "2026-04-25T17:24:33.273Z"
     }
   ],
   "faculty_codes": [
     {
-      "id": "b6929ff1-17db-4352-8dbb-c3ccb776247e",
-      "code": "FAC-W0JCW4",
-      "created_by": "super-admin-master",
+      "id": "3bed7720-539b-4b79-a475-650dd97ac06e",
+      "code": "FAC-C8VO33",
+      "created_by": "a0000000-0000-0000-0000-000000000001",
+      "is_used": 1,
+      "used_by": "0838be0d-6d50-4823-8ec2-e5f16db861c8",
+      "created_at": "2026-04-19T08:55:59.601Z"
+    },
+    {
+      "id": "9648aed3-7a32-4e34-98f4-3fa93d67e74c",
+      "code": "FAC-79KSET",
+      "created_by": "a0000000-0000-0000-0000-000000000001",
       "is_used": 0,
       "used_by": null,
-      "created_at": "2026-04-17T20:10:53.823Z"
+      "created_at": "2026-04-25T07:07:37.573Z"
     }
   ],
   "groups": [
     {
-      "id": "g0000000-0000-0000-0000-000000000001",
-      "name": "CS Study Group",
-      "description": "Computer Science discussions and help",
-      "join_code": "GRP-2026-CS1",
-      "created_by": "a0000000-0000-0000-0000-000000000001",
-      "created_at": "2026-04-17T18:34:20.710Z"
-    },
-    {
-      "id": "g0000000-0000-0000-0000-000000000002",
-      "name": "Math Warriors",
-      "description": "Advanced mathematics study group",
-      "join_code": "STD-2026-MTH",
-      "created_by": "a0000000-0000-0000-0000-000000000001",
-      "created_at": "2026-04-17T18:34:20.710Z"
-    },
-    {
-      "id": "g0000000-0000-0000-0000-000000000003",
-      "name": "Physics Lab",
-      "description": "Physics experiments and theory",
-      "join_code": "DSC-2026-PHY",
-      "created_by": "a0000000-0000-0000-0000-000000000001",
-      "created_at": "2026-04-17T18:34:20.710Z"
+      "id": "95b9f5ee-d354-4345-8585-501356da8e73",
+      "name": "os notes",
+      "description": "notes and assignment of os will be shared",
+      "join_code": "GRP-2026-DZE",
+      "created_by": "75fd9035-fb16-470b-b59d-8d35d811ba08",
+      "created_at": "2026-04-25T16:49:34.582Z"
     }
   ],
   "group_members": [
     {
-      "group_id": "g0000000-0000-0000-0000-000000000001",
-      "user_id": "a0000000-0000-0000-0000-000000000001",
-      "joined_at": "2026-04-17T18:34:20.710Z"
+      "group_id": "95b9f5ee-d354-4345-8585-501356da8e73",
+      "user_id": "75fd9035-fb16-470b-b59d-8d35d811ba08",
+      "joined_at": "2026-04-25T16:49:34.582Z"
     },
     {
-      "group_id": "g0000000-0000-0000-0000-000000000001",
-      "user_id": "s0000000-0000-0000-0000-000000000001",
-      "joined_at": "2026-04-17T18:34:20.710Z"
+      "group_id": "95b9f5ee-d354-4345-8585-501356da8e73",
+      "user_id": "86447ea6-d394-4181-957e-f859b3986a8a",
+      "joined_at": "2026-04-25T16:50:09.852Z"
     },
     {
-      "group_id": "g0000000-0000-0000-0000-000000000001",
-      "user_id": "s0000000-0000-0000-0000-000000000002",
-      "joined_at": "2026-04-17T18:34:20.710Z"
+      "group_id": "95b9f5ee-d354-4345-8585-501356da8e73",
+      "user_id": "8650e057-b3d7-490f-a5b6-846188cf58d1",
+      "joined_at": "2026-04-25T16:50:41.996Z"
     },
     {
-      "group_id": "g0000000-0000-0000-0000-000000000002",
-      "user_id": "s0000000-0000-0000-0000-000000000002",
-      "joined_at": "2026-04-17T18:34:20.710Z"
-    },
-    {
-      "group_id": "g0000000-0000-0000-0000-000000000002",
-      "user_id": "s0000000-0000-0000-0000-000000000003",
-      "joined_at": "2026-04-17T18:34:20.710Z"
-    },
-    {
-      "group_id": "g0000000-0000-0000-0000-000000000003",
-      "user_id": "s0000000-0000-0000-0000-000000000003",
-      "joined_at": "2026-04-17T18:34:20.710Z"
-    },
-    {
-      "group_id": "g0000000-0000-0000-0000-000000000003",
-      "user_id": "s0000000-0000-0000-0000-000000000004",
-      "joined_at": "2026-04-17T18:34:20.710Z"
-    },
-    {
-      "group_id": "g0000000-0000-0000-0000-000000000003",
-      "user_id": "s0000000-0000-0000-0000-000000000005",
-      "joined_at": "2026-04-17T18:34:20.710Z"
-    },
-    {
-      "group_id": "g0000000-0000-0000-0000-000000000002",
-      "user_id": "358abbe2-0935-4c89-8ab6-f8c39b6d3143",
-      "joined_at": "2026-04-17T20:09:34.017Z"
+      "group_id": "95b9f5ee-d354-4345-8585-501356da8e73",
+      "user_id": "3759cfa4-a48b-4e5c-a9d9-e0bf532ecf68",
+      "joined_at": "2026-04-25T16:52:23.975Z"
     }
   ],
   "messages": [
     {
-      "id": "e80e27c5-a82e-4a9a-a605-5d93f6c3839c",
-      "group_id": "g0000000-0000-0000-0000-000000000001",
-      "sender_id": "s0000000-0000-0000-0000-000000000001",
-      "content": "Hey everyone! Ready for the algorithms exam?",
+      "id": "12309800-c242-40f9-98ea-7aaaeb7d3530",
+      "group_id": "95b9f5ee-d354-4345-8585-501356da8e73",
+      "sender_id": "86447ea6-d394-4181-957e-f859b3986a8a",
+      "content": "hiiii",
       "file_url": null,
       "file_name": null,
       "file_type": null,
-      "created_at": "2026-04-17T18:34:20.710Z"
+      "created_at": "2026-04-25T16:50:14.434Z"
     },
     {
-      "id": "f2e13601-c4c7-431d-b804-1934f675d663",
-      "group_id": "g0000000-0000-0000-0000-000000000001",
-      "sender_id": "s0000000-0000-0000-0000-000000000002",
-      "content": "Yes! I uploaded my notes on graph traversal.",
+      "id": "3ffdd56f-4da0-4147-88c3-a2e6e7ce461d",
+      "group_id": "95b9f5ee-d354-4345-8585-501356da8e73",
+      "sender_id": "8650e057-b3d7-490f-a5b6-846188cf58d1",
+      "content": "hii can i have notes of os module 1",
       "file_url": null,
       "file_name": null,
       "file_type": null,
-      "created_at": "2026-04-17T18:34:20.710Z"
+      "created_at": "2026-04-25T16:50:57.440Z"
     },
     {
-      "id": "679137df-bc5b-40c5-aa8d-67adf6de1f30",
-      "group_id": "g0000000-0000-0000-0000-000000000002",
-      "sender_id": "s0000000-0000-0000-0000-000000000002",
-      "content": "Can someone explain eigenvalues?",
-      "file_url": null,
-      "file_name": null,
-      "file_type": null,
-      "created_at": "2026-04-17T18:34:20.710Z"
-    },
-    {
-      "id": "754f2f41-3ce4-43ec-b821-1e8c76b07f0c",
-      "group_id": "g0000000-0000-0000-0000-000000000002",
-      "sender_id": "s0000000-0000-0000-0000-000000000003",
-      "content": "Sure! Think of them as the scaling factors of a matrix transformation.",
-      "file_url": null,
-      "file_name": null,
-      "file_type": null,
-      "created_at": "2026-04-17T18:34:20.710Z"
-    },
-    {
-      "id": "5d1cce15-289e-4d73-b58c-0550ccaaafc6",
-      "group_id": "g0000000-0000-0000-0000-000000000003",
-      "sender_id": "s0000000-0000-0000-0000-000000000004",
-      "content": "Lab report due Friday, anyone started?",
-      "file_url": null,
-      "file_name": null,
-      "file_type": null,
-      "created_at": "2026-04-17T18:34:20.710Z"
-    },
-    {
-      "id": "cabe5587-5157-4977-933f-7dbe75c8dc44",
-      "group_id": "g0000000-0000-0000-0000-000000000002",
-      "sender_id": "358abbe2-0935-4c89-8ab6-f8c39b6d3143",
-      "content": "hiii",
-      "file_url": null,
-      "file_name": null,
-      "file_type": null,
-      "created_at": "2026-04-17T20:09:38.589Z"
+      "id": "328af6e0-f01a-4075-b2c7-779491d3c14a",
+      "group_id": "95b9f5ee-d354-4345-8585-501356da8e73",
+      "sender_id": "86447ea6-d394-4181-957e-f859b3986a8a",
+      "content": null,
+      "file_url": "/uploads/chat/1777197391573-881475008.pdf",
+      "file_name": "os notes 1.pdf",
+      "file_type": "application/pdf",
+      "created_at": "2026-04-26T09:56:31.577Z"
     }
   ],
   "notes": [
     {
-      "id": "n0000000-0000-0000-0000-000000000001",
-      "uploader_id": "s0000000-0000-0000-0000-000000000001",
-      "title": "Data Structures Complete Guide",
-      "description": "Comprehensive notes on arrays, trees, graphs, and hash tables",
+      "id": "3673c04f-f615-44d0-9fbc-122dc9c4dfff",
+      "uploader_id": "68a1c4e6-5d74-4ae1-9057-b74cf20704e9",
+      "title": "Physics 101",
+      "description": "Introductory Physics notes.",
       "subject": "Computer Science",
-      "file_url": "/uploads/notes/sample-ds.pdf",
-      "file_name": "data-structures.pdf",
-      "file_type": "application/pdf",
-      "file_size": 2048000,
+      "file_url": "pending",
+      "file_name": "unknown",
+      "file_type": "application/octet-stream",
+      "file_size": 0,
       "is_flagged": 0,
       "is_approved": 1,
-      "downloads": 45,
-      "created_at": "2026-04-17T18:34:20.710Z"
+      "downloads": 5,
+      "created_at": "2026-04-19T08:52:09.626Z"
     },
     {
-      "id": "n0000000-0000-0000-0000-000000000002",
-      "uploader_id": "s0000000-0000-0000-0000-000000000002",
-      "title": "Linear Algebra Cheat Sheet",
-      "description": "Quick reference for matrices, determinants, and eigenvalues",
-      "subject": "Mathematics",
-      "file_url": "/uploads/notes/sample-la.pdf",
-      "file_name": "linear-algebra.pdf",
-      "file_type": "application/pdf",
-      "file_size": 1024000,
-      "is_flagged": 0,
-      "is_approved": 1,
-      "downloads": 32,
-      "created_at": "2026-04-17T18:34:20.710Z"
-    },
-    {
-      "id": "n0000000-0000-0000-0000-000000000003",
-      "uploader_id": "s0000000-0000-0000-0000-000000000003",
-      "title": "Quantum Mechanics Basics",
-      "description": "Introduction to wave-particle duality and Schrodinger equation",
-      "subject": "Physics",
-      "file_url": "/uploads/notes/sample-qm.pdf",
-      "file_name": "quantum-mechanics.pdf",
-      "file_type": "application/pdf",
-      "file_size": 3072000,
-      "is_flagged": 0,
-      "is_approved": 1,
-      "downloads": 28,
-      "created_at": "2026-04-17T18:34:20.710Z"
-    },
-    {
-      "id": "n0000000-0000-0000-0000-000000000004",
-      "uploader_id": "s0000000-0000-0000-0000-000000000005",
-      "title": "Cell Biology Notes",
-      "description": "Detailed notes on cell structure, organelles, and processes",
-      "subject": "Biology",
-      "file_url": "/uploads/notes/sample-bio.pdf",
-      "file_name": "cell-biology.pdf",
-      "file_type": "application/pdf",
-      "file_size": 1536000,
-      "is_flagged": 0,
-      "is_approved": 1,
-      "downloads": 19,
-      "created_at": "2026-04-17T18:34:20.710Z"
-    },
-    {
-      "id": "n0000000-0000-0000-0000-000000000005",
-      "uploader_id": "s0000000-0000-0000-0000-000000000001",
-      "title": "Algorithm Design Patterns",
-      "description": "Dynamic programming, greedy, divide and conquer patterns",
+      "id": "66405320-8fca-45be-82d8-d6a712f00c14",
+      "uploader_id": "86447ea6-d394-4181-957e-f859b3986a8a",
+      "title": "AOA TRAVELLING SALESMAN PROBLEM",
+      "description": "analysis of algoritm notes based on travelling sales man problem",
       "subject": "Computer Science",
-      "file_url": "/uploads/notes/sample-algo.pdf",
-      "file_name": "algorithms.pdf",
-      "file_type": "application/pdf",
-      "file_size": 2560000,
-      "is_flagged": 0,
-      "is_approved": 1,
-      "downloads": 55,
-      "created_at": "2026-04-17T18:34:20.710Z"
-    },
-    {
-      "id": "6d1b13b6-bb3a-4c9f-8a5f-a6db5a0afd68",
-      "uploader_id": "358abbe2-0935-4c89-8ab6-f8c39b6d3143",
-      "title": "the dna of numbers",
-      "description": "an excellent ppt for understanding the dna of number an topic of mathematics 3",
-      "subject": "Mathematics",
-      "file_url": "/uploads/notes/1776456533349-667379146.pptx",
-      "file_name": "The-DNA-of-Numbers.pptx",
+      "file_url": "/uploads/notes/1776589236983-342497683.pptx",
+      "file_name": "Travelling-Salesman-Problem-using-Branch-and-Bound (1).pptx",
       "file_type": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-      "file_size": 10609146,
+      "file_size": 20395408,
+      "is_flagged": 0,
+      "is_approved": 1,
+      "downloads": 5,
+      "created_at": "2026-04-19T09:00:37.261Z"
+    },
+    {
+      "id": "7e134b31-4ebf-494c-943b-65c846868078",
+      "uploader_id": "86447ea6-d394-4181-957e-f859b3986a8a",
+      "title": "git cheat sheet",
+      "description": "git hub cheat sheet easy and simple steps",
+      "subject": "Computer Science",
+      "file_url": "/uploads/notes/1776589340650-451386148.pdf",
+      "file_name": "git-cheat-sheet-education.pdf",
+      "file_type": "application/pdf",
+      "file_size": 100194,
+      "is_flagged": 0,
+      "is_approved": 1,
+      "downloads": 4,
+      "created_at": "2026-04-19T09:02:20.653Z"
+    },
+    {
+      "id": "e5bf43c2-12e4-409b-8497-9e5eb1dcfcac",
+      "uploader_id": "86447ea6-d394-4181-957e-f859b3986a8a",
+      "title": "agrotech",
+      "description": "an app based on agriculututral equipment ",
+      "subject": "Computer Science",
+      "file_url": "/uploads/notes/1776612540805-324839823.pdf",
+      "file_name": "AgroRent_Project_Report.pdf",
+      "file_type": "application/pdf",
+      "file_size": 64926,
       "is_flagged": 0,
       "is_approved": 1,
       "downloads": 2,
-      "created_at": "2026-04-17T20:08:54.077Z"
+      "created_at": "2026-04-19T15:29:00.813Z"
+    },
+    {
+      "id": "ebd4c9c7-7fb2-4f68-899b-b5e4cf01a739",
+      "uploader_id": "3759cfa4-a48b-4e5c-a9d9-e0bf532ecf68",
+      "title": "fsjp code",
+      "description": "full stack java development experiment on whow to write code in html",
+      "subject": "Computer Science",
+      "file_url": "/uploads/notes/1777141396531-74273106.pdf",
+      "file_name": "FSJP Ex 5.pdf",
+      "file_type": "application/pdf",
+      "file_size": 256909,
+      "is_flagged": 0,
+      "is_approved": 1,
+      "downloads": 3,
+      "created_at": "2026-04-25T18:23:16.541Z"
+    },
+    {
+      "id": "c9224873-2847-4abe-96d3-3656d0424bb0",
+      "uploader_id": "86447ea6-d394-4181-957e-f859b3986a8a",
+      "title": "operating system notes based on file managment",
+      "description": "file and io managment in os",
+      "subject": "Computer Science",
+      "file_url": "/uploads/notes/1777142126187-585169855.pdf",
+      "file_name": "5-File and IO management.pdf",
+      "file_type": "application/pdf",
+      "file_size": 16791273,
+      "is_flagged": 0,
+      "is_approved": 1,
+      "downloads": 1,
+      "created_at": "2026-04-25T18:35:26.736Z"
     }
   ],
   "note_ratings": [
     {
-      "id": "2efd4934-869c-4964-a00c-bc0628f48620",
-      "note_id": "6d1b13b6-bb3a-4c9f-8a5f-a6db5a0afd68",
-      "user_id": "358abbe2-0935-4c89-8ab6-f8c39b6d3143",
+      "id": "9b870686-0691-4279-bc57-291393abcb1d",
+      "note_id": "3673c04f-f615-44d0-9fbc-122dc9c4dfff",
+      "user_id": "68a1c4e6-5d74-4ae1-9057-b74cf20704e9",
       "rating": 5,
-      "review": "i love the quality of the notes",
-      "created_at": "2026-04-17T20:12:09.220Z"
+      "review": null,
+      "created_at": "2026-04-19T08:52:54.759Z"
+    },
+    {
+      "id": "d2492ca6-ee6a-4c8d-be1e-b74423ff8ca8",
+      "note_id": "3673c04f-f615-44d0-9fbc-122dc9c4dfff",
+      "user_id": "0838be0d-6d50-4823-8ec2-e5f16db861c8",
+      "rating": 4,
+      "review": "good",
+      "created_at": "2026-04-19T08:57:14.078Z"
+    },
+    {
+      "id": "67254220-2db2-4d7e-9549-cdf517e5ce1c",
+      "note_id": "3673c04f-f615-44d0-9fbc-122dc9c4dfff",
+      "user_id": "86447ea6-d394-4181-957e-f859b3986a8a",
+      "rating": 3,
+      "review": "not likely fully correct",
+      "created_at": "2026-04-19T08:58:49.922Z"
+    },
+    {
+      "id": "1c94136f-b653-4c8a-9079-38cc885eafc6",
+      "note_id": "66405320-8fca-45be-82d8-d6a712f00c14",
+      "user_id": "86447ea6-d394-4181-957e-f859b3986a8a",
+      "rating": 2,
+      "review": "very long context",
+      "created_at": "2026-04-19T09:00:58.843Z"
+    },
+    {
+      "id": "cacf4294-aaff-40f6-9e24-5eb158d8f3bd",
+      "note_id": "7e134b31-4ebf-494c-943b-65c846868078",
+      "user_id": "8650e057-b3d7-490f-a5b6-846188cf58d1",
+      "rating": 5,
+      "review": "very useful",
+      "created_at": "2026-04-19T09:03:37.702Z"
+    },
+    {
+      "id": "014ccfaf-5583-4921-9c8a-1addad9e4c35",
+      "note_id": "66405320-8fca-45be-82d8-d6a712f00c14",
+      "user_id": "8650e057-b3d7-490f-a5b6-846188cf58d1",
+      "rating": 3,
+      "review": "not of good qulity very lengthy",
+      "created_at": "2026-04-19T09:04:04.508Z"
+    },
+    {
+      "id": "e72d5406-75ed-4b20-a87a-b9ccecacce5f",
+      "note_id": "3673c04f-f615-44d0-9fbc-122dc9c4dfff",
+      "user_id": "8650e057-b3d7-490f-a5b6-846188cf58d1",
+      "rating": 2,
+      "review": "not for me it can be better",
+      "created_at": "2026-04-19T09:04:24.448Z"
+    },
+    {
+      "id": "76356feb-e89b-4683-a7f9-69079b2bdfde",
+      "note_id": "e5bf43c2-12e4-409b-8497-9e5eb1dcfcac",
+      "user_id": "86447ea6-d394-4181-957e-f859b3986a8a",
+      "rating": 5,
+      "review": "very good",
+      "created_at": "2026-04-19T15:29:12.487Z"
+    },
+    {
+      "id": "d0bf9d55-0f4d-477f-86f2-348096651ce4",
+      "note_id": "e5bf43c2-12e4-409b-8497-9e5eb1dcfcac",
+      "user_id": "8650e057-b3d7-490f-a5b6-846188cf58d1",
+      "rating": 4,
+      "review": "great",
+      "created_at": "2026-04-19T15:30:31.389Z"
+    },
+    {
+      "id": "fcde08b1-fa7a-4c11-be33-e4beaa280c30",
+      "note_id": "7e134b31-4ebf-494c-943b-65c846868078",
+      "user_id": "31fb74ad-3fe6-4fb9-86b6-87935357a232",
+      "rating": 4,
+      "review": "good",
+      "created_at": "2026-04-19T15:46:50.133Z"
+    },
+    {
+      "id": "2929f94d-59c2-4d2f-92d8-ebdc3faa9a6c",
+      "note_id": "e5bf43c2-12e4-409b-8497-9e5eb1dcfcac",
+      "user_id": "3759cfa4-a48b-4e5c-a9d9-e0bf532ecf68",
+      "rating": 4,
+      "review": "good",
+      "created_at": "2026-04-25T07:23:39.098Z"
+    },
+    {
+      "id": "941cc1c2-b1dd-4322-bc6d-5f2c167a41d8",
+      "note_id": "7e134b31-4ebf-494c-943b-65c846868078",
+      "user_id": "3759cfa4-a48b-4e5c-a9d9-e0bf532ecf68",
+      "rating": 5,
+      "review": "very good",
+      "created_at": "2026-04-25T07:23:57.142Z"
+    },
+    {
+      "id": "bd57ca9b-05ba-465f-9bab-372d5ce1eff6",
+      "note_id": "ebd4c9c7-7fb2-4f68-899b-b5e4cf01a739",
+      "user_id": "86447ea6-d394-4181-957e-f859b3986a8a",
+      "rating": 4,
+      "review": "good",
+      "created_at": "2026-04-25T18:24:03.575Z"
+    },
+    {
+      "id": "a4beb81c-b67a-4a52-808c-5d4091c26ae2",
+      "note_id": "c9224873-2847-4abe-96d3-3656d0424bb0",
+      "user_id": "8650e057-b3d7-490f-a5b6-846188cf58d1",
+      "rating": 4,
+      "review": "good qulaity of notes",
+      "created_at": "2026-04-26T09:51:27.650Z"
     }
   ],
   "leaderboard_points": [
     {
-      "id": "e1325b7e-de7f-4531-b31a-3146d2fa53b6",
-      "user_id": "358abbe2-0935-4c89-8ab6-f8c39b6d3143",
+      "id": "63e1f85c-34cb-4e2c-ac94-f335419ef7cf",
+      "user_id": "68a1c4e6-5d74-4ae1-9057-b74cf20704e9",
       "points": 10,
       "reason": "note_upload",
-      "reference_id": "6d1b13b6-bb3a-4c9f-8a5f-a6db5a0afd68",
-      "created_at": "2026-04-17T20:08:54.077Z"
+      "reference_id": "3673c04f-f615-44d0-9fbc-122dc9c4dfff",
+      "created_at": "2026-04-19T08:52:09.626Z"
+    },
+    {
+      "id": "ebe0ffba-1385-4845-8c9e-8e453ff6cc64",
+      "user_id": "86447ea6-d394-4181-957e-f859b3986a8a",
+      "points": 10,
+      "reason": "note_upload",
+      "reference_id": "66405320-8fca-45be-82d8-d6a712f00c14",
+      "created_at": "2026-04-19T09:00:37.261Z"
+    },
+    {
+      "id": "0a7eef5a-548a-46e1-81a3-d3cd460bca00",
+      "user_id": "86447ea6-d394-4181-957e-f859b3986a8a",
+      "points": 10,
+      "reason": "note_upload",
+      "reference_id": "7e134b31-4ebf-494c-943b-65c846868078",
+      "created_at": "2026-04-19T09:02:20.653Z"
+    },
+    {
+      "id": "f0e2d837-e08d-49a8-aa03-68d5dbe23a6c",
+      "user_id": "86447ea6-d394-4181-957e-f859b3986a8a",
+      "points": 10,
+      "reason": "note_upload",
+      "reference_id": "e5bf43c2-12e4-409b-8497-9e5eb1dcfcac",
+      "created_at": "2026-04-19T15:29:00.813Z"
+    },
+    {
+      "id": "64fca7ce-8b93-4ee1-8bf3-2d5bfd75b355",
+      "user_id": "3759cfa4-a48b-4e5c-a9d9-e0bf532ecf68",
+      "points": 10,
+      "reason": "note_upload",
+      "reference_id": "ebd4c9c7-7fb2-4f68-899b-b5e4cf01a739",
+      "created_at": "2026-04-25T18:23:16.541Z"
+    },
+    {
+      "id": "f035e2b7-1395-46e1-9ce6-c7bd6749d2b6",
+      "user_id": "86447ea6-d394-4181-957e-f859b3986a8a",
+      "points": 10,
+      "reason": "note_upload",
+      "reference_id": "c9224873-2847-4abe-96d3-3656d0424bb0",
+      "created_at": "2026-04-25T18:35:26.736Z"
+    },
+    {
+      "id": "70a54ec2-8ffc-4364-be82-085de3ccbc54",
+      "user_id": "86447ea6-d394-4181-957e-f859b3986a8a",
+      "points": 2,
+      "reason": "note_download",
+      "reference_id": "c9224873-2847-4abe-96d3-3656d0424bb0",
+      "created_at": "2026-04-26T09:51:37.385Z"
     }
   ],
   "complaints": [
     {
-      "id": "aa3e88cc-3dde-4397-b63d-e544c7ce0e51",
-      "student_id": "s0000000-0000-0000-0000-000000000001",
-      "title": "Cannot download notes",
-      "description": "Getting a 404 error when trying to download uploaded notes",
-      "status": "open",
-      "admin_reply": null,
-      "resolved_by": null,
-      "created_at": "2026-04-17T18:34:20.710Z",
-      "updated_at": "2026-04-17T18:34:20.710Z"
-    },
-    {
-      "id": "3012e172-b460-40cb-a6c9-40eb9eb00020",
-      "student_id": "s0000000-0000-0000-0000-000000000004",
-      "title": "Incorrect points calculation",
-      "description": "My points were not updated after uploading 3 notes",
+      "id": "5d823eef-f621-45f5-9800-816845acda38",
+      "student_id": "86447ea6-d394-4181-957e-f859b3986a8a",
+      "title": "upload in chat system",
+      "description": "not able to upload notes in chat system",
       "status": "in_progress",
-      "admin_reply": null,
-      "resolved_by": null,
-      "created_at": "2026-04-17T18:34:20.710Z",
-      "updated_at": "2026-04-17T18:34:20.710Z"
+      "admin_reply": "now you can send attachment and pdf and all types of files",
+      "resolved_by": "a0000000-0000-0000-0000-000000000001",
+      "created_at": "2026-04-25T18:29:49.527Z",
+      "updated_at": "2026-04-26T16:12:52.526Z"
     }
   ]
 }

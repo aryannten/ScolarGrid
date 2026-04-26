@@ -10,7 +10,7 @@ const item = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } };
 const DEFAULT_SUBJECTS = ['Computer Science', 'Mathematics', 'Physics', 'Chemistry', 'Electrical Engineering', 'Mechanical Engineering', 'Biology', 'Economics'];
 
 export default function NotesPage() {
-  const { user } = useAuth();
+  const { user, refreshProfile } = useAuth();
   const [notes, setNotes] = useState([]);
   const [subjects, setSubjects] = useState(DEFAULT_SUBJECTS);
   const [search, setSearch] = useState('');
@@ -22,6 +22,7 @@ export default function NotesPage() {
   const [uploadFile, setUploadFile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [minRating, setMinRating] = useState(0);
 
   // Review Modal state
   const [showReviewModal, setShowReviewModal] = useState(false);
@@ -32,12 +33,12 @@ export default function NotesPage() {
   useEffect(() => {
     loadNotes();
     loadSubjects();
-  }, [subject, sortBy]);
+  }, [subject, sortBy, minRating]);
 
   const loadNotes = async () => {
     try {
       setLoading(true);
-      const data = await fetchNotes({ subject, search, sortBy });
+      const data = await fetchNotes({ subject, search, sortBy, minRating });
       setNotes(data);
     } catch (err) {
       console.error('Error loading notes:', err);
@@ -79,6 +80,7 @@ export default function NotesPage() {
         subject: uploadForm.subject,
       }, uploadFile);
       setNotes([newNote, ...notes]);
+      refreshProfile();
       setShowUpload(false);
       setUploadForm({ title: '', description: '', subject: '', tags: '' });
       setUploadFile(null);
@@ -98,6 +100,7 @@ export default function NotesPage() {
       });
       if (res.ok) {
         setNotes(notes.map(n => n.id === id ? { ...n, downloads: n.downloads + 1 } : n));
+        refreshProfile();
       }
       const link = document.createElement('a');
       link.href = fileUrl;
@@ -122,12 +125,12 @@ export default function NotesPage() {
     }
   };
 
-  const renderStars = (rating) => (
+  const renderStars = (rating, totalRatings = 0) => (
     <div className="flex items-center gap-0.5">
       {[1, 2, 3, 4, 5].map(i => (
         <Star key={i} className={`w-3.5 h-3.5 ${i <= Math.round(rating) ? 'text-gold-400 fill-gold-400' : 'text-gray-300 dark:text-gray-600'}`} />
       ))}
-      <span className="text-xs text-gray-500 ml-1">{rating ? rating.toFixed(1) : 0}</span>
+      <span className="text-xs text-gray-500 ml-1">{rating ? rating.toFixed(1) : 0} ({totalRatings})</span>
     </div>
   );
 
@@ -160,9 +163,18 @@ export default function NotesPage() {
           </div>
           <div className="relative">
             <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="input-field pr-10 appearance-none cursor-pointer min-w-[130px]">
-              <option value="top-rated">Top Rated</option>
+              <option value="rating">Top Rated</option>
               <option value="recent">Most Recent</option>
               <option value="downloads">Most Downloaded</option>
+            </select>
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+          </div>
+          <div className="relative">
+            <select value={minRating} onChange={e => setMinRating(parseFloat(e.target.value))} className="input-field pr-10 appearance-none cursor-pointer min-w-[130px]">
+              <option value="0">Min Rating</option>
+              <option value="4">4+ Stars</option>
+              <option value="3">3+ Stars</option>
+              <option value="2">2+ Stars</option>
             </select>
             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
           </div>
@@ -217,7 +229,7 @@ export default function NotesPage() {
                   <span className="text-xs text-gray-500">{note.subject}</span>
                   <div className="flex items-center gap-3">
                     <button onClick={() => { setReviewNoteId(note.id); setShowReviewModal(true); }} className="flex items-center gap-1 text-xs text-gray-400 hover:text-gold-500 transition-colors" title="Rate this note">
-                      {renderStars(note.rating)}
+                      {renderStars(note.rating, note.totalRatings)}
                     </button>
                     <button onClick={() => handleDownload(note.id, note.fileUrl)} className="flex items-center gap-1 text-xs text-gray-400 hover:text-brand-500 transition-colors cursor-pointer" title="Download">
                       <Download className="w-3 h-3" /> {note.downloads}
@@ -258,7 +270,7 @@ export default function NotesPage() {
               </div>
               <div className="hidden sm:flex items-center gap-4 flex-shrink-0">
                 <button onClick={() => { setReviewNoteId(note.id); setShowReviewModal(true); }} className="flex items-center gap-1 text-xs text-gray-400 hover:text-gold-500 transition-colors" title="Rate this note">
-                  {renderStars(note.rating)}
+                  {renderStars(note.rating, note.totalRatings)}
                 </button>
                 <div className="flex items-center gap-1 text-sm text-gray-500"><Download className="w-4 h-4" /> {note.downloads}</div>
                 <button onClick={() => handleDownload(note.id, note.fileUrl)} className="btn-secondary text-sm py-1.5 px-3">Download</button>

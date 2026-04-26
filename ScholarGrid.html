@@ -1,0 +1,656 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ScholarGrid Report - Chapters 3 to 7</title>
+  <style>
+    @page { size: A4; margin: 18mm 14mm; }
+    body { font-family: "Segoe UI", Arial, sans-serif; color: #1a1a1a; line-height: 1.45; font-size: 11.5pt; }
+    h1, h2, h3, h4 { margin: 0 0 8px 0; }
+    h1 { font-size: 22pt; }
+    h2 { font-size: 15pt; margin-top: 18px; border-bottom: 1px solid #e2e2e2; padding-bottom: 4px; }
+    h3 { font-size: 12.5pt; margin-top: 14px; }
+    h4 { font-size: 11.5pt; margin-top: 10px; }
+    p { margin: 6px 0; }
+    ul { margin: 6px 0 10px 20px; }
+    li { margin: 3px 0; }
+    .cover { text-align: center; padding-top: 80px; }
+    .muted { color: #666; }
+    .page-break { break-before: page; }
+    .card { border: 1px solid #e3e3e3; border-radius: 8px; padding: 10px 12px; margin: 10px 0; background: #fbfbfb; }
+    table { width: 100%; border-collapse: collapse; margin: 8px 0 12px; }
+    th, td { border: 1px solid #d9d9d9; padding: 7px 8px; text-align: left; vertical-align: top; font-size: 10.8pt; }
+    th { background: #f2f4f7; }
+    pre { white-space: pre-wrap; word-break: break-word; border: 1px solid #e1e1e1; background: #fafafa; padding: 10px; border-radius: 6px; font-size: 9.3pt; line-height: 1.33; }
+    code { font-family: Consolas, "Courier New", monospace; }
+  </style>
+</head>
+<body>
+  <section class="cover">
+    <h1>ScholarGrid - Technical Report</h1>
+    <p><strong>Requested Content:</strong> Chapters 3 to 7 + Tech Stack + Supabase Setup SQL</p>
+    <p class="muted">Generated on 14 April 2026</p>
+  </section>
+
+  <section>
+    <h2>Tech Stack</h2>
+    <table>
+      <tr><th>Layer</th><th>Technology</th><th>Version / Notes</th></tr>
+      <tr><td>Frontend Framework</td><td>React</td><td>19.2.4</td></tr>
+      <tr><td>Build Tool</td><td>Vite</td><td>8.0.1</td></tr>
+      <tr><td>Routing</td><td>React Router DOM</td><td>7.13.1</td></tr>
+      <tr><td>Styling</td><td>Tailwind CSS + PostCSS + Autoprefixer</td><td>Tailwind 3.4.19</td></tr>
+      <tr><td>Animation</td><td>Framer Motion</td><td>12.38.0</td></tr>
+      <tr><td>Icons</td><td>Lucide React</td><td>0.577.0</td></tr>
+      <tr><td>Backend-as-a-Service</td><td>Supabase (Auth, Postgres, Storage, Realtime)</td><td>@supabase/supabase-js 2.103.0</td></tr>
+      <tr><td>Linting</td><td>ESLint</td><td>9.39.4</td></tr>
+      <tr><td>Language Runtime</td><td>JavaScript (ES Modules)</td><td>Node + Browser execution</td></tr>
+    </table>
+    <div class="card">
+      <p><strong>Codebase layout:</strong> React SPA with role-based routing for student and admin modules, backed by Supabase tables, RLS policies, storage buckets, and realtime channels.</p>
+    </div>
+  </section>
+
+  <section class="page-break">
+    <h2>Chapter 3 - System Requirements</h2>
+
+    <h3>3.1 Stakeholder Analysis</h3>
+    <table>
+      <tr><th>Stakeholder</th><th>Role in System</th><th>Primary Needs</th></tr>
+      <tr><td>Students</td><td>Upload/download notes, join groups, chat, submit complaints, view leaderboard</td><td>Fast search, reliable uploads, clear feedback tracking, fair point system</td></tr>
+      <tr><td>Administrators</td><td>Moderate notes, manage users/groups, resolve complaints, monitor analytics</td><td>Role-based controls, actionable dashboards, safe moderation workflow</td></tr>
+      <tr><td>Institution/Department</td><td>Platform owner</td><td>Secure data handling, auditability, scalable architecture, maintainability</td></tr>
+      <tr><td>Developers/Maintainers</td><td>Build and maintain product</td><td>Clear module boundaries, predictable schema, reusable service layer</td></tr>
+    </table>
+
+    <h3>3.2 Functional Requirements</h3>
+    <ul>
+      <li><strong>FR-01:</strong> User authentication via signup/login using Supabase Auth.</li>
+      <li><strong>FR-02:</strong> Role-based access control for student and admin routes.</li>
+      <li><strong>FR-03:</strong> Student profile view/edit including avatar update.</li>
+      <li><strong>FR-04:</strong> Note upload with metadata (title, description, subject, file).</li>
+      <li><strong>FR-05:</strong> Notes listing with subject filter, text search, and sorting.</li>
+      <li><strong>FR-06:</strong> Admin note moderation (flag/unflag/delete).</li>
+      <li><strong>FR-07:</strong> Group creation/joining and member-based group visibility.</li>
+      <li><strong>FR-08:</strong> Group chat with real-time message updates.</li>
+      <li><strong>FR-09:</strong> Complaint submission by students and complaint resolution by admins.</li>
+      <li><strong>FR-10:</strong> Leaderboard generation based on profile points.</li>
+      <li><strong>FR-11:</strong> Admin analytics for users, uploads, downloads, subjects, and complaints.</li>
+    </ul>
+
+    <h3>3.3 Non-Functional Requirements</h3>
+    <ul>
+      <li><strong>Security:</strong> Enforced via Supabase Row Level Security (RLS), storage policies, and authenticated sessions.</li>
+      <li><strong>Performance:</strong> Indexed database columns on commonly queried fields (role, subject, flagged status, timestamps).</li>
+      <li><strong>Usability:</strong> Responsive UI, clear navigation, search/filter affordances, role-specific dashboards.</li>
+      <li><strong>Reliability:</strong> Managed backend services (Supabase Postgres/Auth/Storage/Realtime) reduce infrastructure failure points.</li>
+      <li><strong>Maintainability:</strong> Service-oriented frontend (`src/services/*`) with separated modules for notes, groups, messages, complaints, users, analytics.</li>
+      <li><strong>Scalability:</strong> Backend can scale with managed Postgres and realtime channels; frontend remains stateless SPA.</li>
+    </ul>
+
+    <h3>3.4 Hardware Requirements</h3>
+    <table>
+      <tr><th>Component</th><th>Minimum</th><th>Recommended</th></tr>
+      <tr><td>Client Device</td><td>Dual-core CPU, 4 GB RAM</td><td>Quad-core CPU, 8 GB RAM</td></tr>
+      <tr><td>Storage</td><td>200 MB free</td><td>1 GB free</td></tr>
+      <tr><td>Network</td><td>5 Mbps broadband</td><td>10+ Mbps stable broadband</td></tr>
+      <tr><td>Display</td><td>1366x768</td><td>1920x1080</td></tr>
+    </table>
+
+    <h3>3.5 Software Requirements</h3>
+    <table>
+      <tr><th>Software</th><th>Purpose</th><th>Version / Notes</th></tr>
+      <tr><td>Node.js + npm</td><td>Build and run frontend project</td><td>Current LTS recommended</td></tr>
+      <tr><td>Supabase Project</td><td>Auth, DB, Storage, Realtime backend</td><td>Configured through `.env` (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`)</td></tr>
+      <tr><td>Browser</td><td>Run SPA</td><td>Latest Chrome/Edge/Firefox</td></tr>
+      <tr><td>Operating System</td><td>Development/Execution</td><td>Windows/Linux/macOS</td></tr>
+    </table>
+  </section>
+
+  <section class="page-break">
+    <h2>Chapter 4 - System Design</h2>
+
+    <h3>4.1 System Architecture</h3>
+    <div class="card">
+      <p><strong>Architecture Type:</strong> Client-centric SPA + Backend-as-a-Service.</p>
+      <p><strong>Flow:</strong> React UI -> Service Layer (`src/services`) -> Supabase APIs -> Postgres/Storage/Realtime.</p>
+      <p><strong>Access Control:</strong> `ProtectedRoute` + role checks in frontend, and RLS enforcement in backend.</p>
+    </div>
+    <pre>Presentation Layer:
+  - React pages/components
+  - Student layout and Admin layout
+
+Application Layer:
+  - AuthContext and ThemeContext
+  - Service modules (notes, users, groups, messages, complaints, analytics)
+
+Data Layer:
+  - Supabase Postgres tables
+  - Supabase Storage buckets (avatars, notes-files, chat-files)
+  - Supabase Realtime publications (messages, complaints, profiles)</pre>
+
+    <h3>4.2 Database Design and Entity-Relationship Model</h3>
+    <p>Main entities in `supabase_setup.sql`: <code>profiles</code>, <code>groups</code>, <code>group_members</code>, <code>messages</code>, <code>notes</code>, <code>leaderboard_points</code>, <code>complaints</code>.</p>
+    <pre>ER Relationship Summary:
+auth.users (1) ----- (1) profiles
+profiles (1) ------- (M) notes [uploader_id]
+profiles (1) ------- (M) complaints [student_id]
+profiles (1) ------- (M) leaderboard_points [user_id]
+profiles (1) ------- (M) groups [created_by]
+groups (1) --------- (M) messages [group_id]
+groups (1) --------- (M) group_members [group_id]
+profiles (1) ------- (M) group_members [user_id]
+profiles (1) ------- (M) messages [sender_id]</pre>
+    <p>Design includes trigger-based profile creation, automatic `updated_at`, and points awarding on note upload.</p>
+
+    <h3>4.3 Data Flow Diagrams</h3>
+    <h4>Level 0 DFD</h4>
+    <pre>Student/Admin User -> ScholarGrid Web App -> Supabase Services -> Database/Storage
+                         ^                                |
+                         |------------ Realtime ----------|</pre>
+    <h4>Level 1 DFD (Major Flows)</h4>
+    <pre>1) Authentication Flow:
+   User -> Login/Signup Form -> AuthContext -> Supabase Auth -> Session + Profile
+
+2) Note Upload Flow:
+   Student -> Notes UI -> notesService.uploadNote -> Storage bucket + notes table -> Dashboard/Leaderboard updates
+
+3) Complaint Flow:
+   Student -> FeedbackPage -> complaints table -> Admin ComplaintsPage -> status/reply update -> realtime update to student
+
+4) Chat Flow:
+   Group Member -> ChatPage -> messages table -> realtime channel -> group members</pre>
+
+    <h3>4.4 Use Case Diagrams and Descriptions</h3>
+    <h4>Primary Actors</h4>
+    <ul>
+      <li><strong>Student:</strong> register/login, manage profile, upload and browse notes, join groups, chat, submit complaints, view leaderboard.</li>
+      <li><strong>Admin:</strong> moderate notes, manage users and groups, resolve complaints, inspect analytics.</li>
+    </ul>
+    <h4>Use Case Matrix</h4>
+    <table>
+      <tr><th>Use Case</th><th>Actor</th><th>Precondition</th><th>Postcondition</th></tr>
+      <tr><td>UC-01 Signup/Login</td><td>Student/Admin</td><td>User has credentials</td><td>Authenticated session established</td></tr>
+      <tr><td>UC-02 Upload Note</td><td>Student</td><td>Authenticated student</td><td>File stored and note row inserted</td></tr>
+      <tr><td>UC-03 Join Group</td><td>Student</td><td>Valid join code</td><td>Membership row created</td></tr>
+      <tr><td>UC-04 Send Message</td><td>Student</td><td>Group membership exists</td><td>Message persisted and broadcast</td></tr>
+      <tr><td>UC-05 Resolve Complaint</td><td>Admin</td><td>Complaint exists</td><td>Status/admin reply updated</td></tr>
+      <tr><td>UC-06 Moderate Note</td><td>Admin</td><td>Admin authenticated</td><td>Note flagged/unflagged/deleted</td></tr>
+    </table>
+
+    <h3>4.5 Module-Level Design</h3>
+    <ul>
+      <li><strong>Auth Module:</strong> `AuthContext`, signup/login/logout, profile sync.</li>
+      <li><strong>Routing Module:</strong> `AppRouter` + `ProtectedRoute` with role guards.</li>
+      <li><strong>Notes Module:</strong> note CRUD, subject fetch, upload pipeline, moderation actions.</li>
+      <li><strong>Chat Module:</strong> groups, memberships, messages, realtime subscriptions.</li>
+      <li><strong>Feedback Module:</strong> complaint creation, status transitions, admin response.</li>
+      <li><strong>Analytics Module:</strong> aggregate counts, monthly trends, top subjects, top performers.</li>
+      <li><strong>Profile Module:</strong> editable user metadata and avatar upload.</li>
+    </ul>
+
+    <h3>4.6 Security Design</h3>
+    <ul>
+      <li>Supabase Auth for identity management.</li>
+      <li>Row Level Security policies on all main tables.</li>
+      <li>Role checks (`student`, `admin`) in both policy and UI routing layers.</li>
+      <li>Storage policies per bucket: public avatar reads, authenticated/private rules for notes and chat files.</li>
+      <li>Limited update permissions (self-profile updates, admin escalation permissions).</li>
+      <li>Banning and warning controls for governance and misuse handling.</li>
+    </ul>
+  </section>
+
+  <section class="page-break">
+    <h2>Chapter 5 - Implementation</h2>
+
+    <h3>5.1 Development Environment Setup</h3>
+    <pre>1. Install Node.js (LTS) and npm.
+2. Clone project and install dependencies:
+   npm install
+3. Create .env with:
+   VITE_SUPABASE_URL=...
+   VITE_SUPABASE_ANON_KEY=...
+4. Start development server:
+   npm run dev
+5. Open browser at local Vite URL.</pre>
+
+    <h3>5.2 Database Schema Implementation</h3>
+    <p>The schema is implemented through `supabase_setup.sql`, executed once in Supabase SQL Editor. It creates tables, indexes, triggers, RLS policies, storage buckets, and realtime publication mappings.</p>
+    <ul>
+      <li>Tables for users, notes, groups, messages, complaints, and point events.</li>
+      <li>Triggers for automatic profile creation and note upload points.</li>
+      <li>Policies for secure read/write access by role and ownership.</li>
+      <li>Storage buckets: `avatars`, `notes-files`, `chat-files`.</li>
+    </ul>
+
+    <h3>5.3 Authentication Module</h3>
+    <ul>
+      <li>Implemented in `AuthContext.jsx` with Supabase session tracking.</li>
+      <li>Supports signup (with role metadata), login, logout, and profile refresh.</li>
+      <li>User object is normalized for UI (`name`, `role`, `tier`, `points`, `warnings`, `is_banned`).</li>
+      <li>Route access controlled by `ProtectedRoute` and `allowedRoles` constraints.</li>
+    </ul>
+
+    <h3>5.4 Note Upload Module</h3>
+    <ul>
+      <li>Upload form in `NotesPage.jsx` collects metadata and file.</li>
+      <li>`notesService.uploadNote()` generates UUID, uploads file to `notes-files`, and inserts metadata to `notes` table.</li>
+      <li>Uploads trigger points awarding via `trg_award_points_note_upload` in SQL layer.</li>
+      <li>Admin can flag/delete notes from `NotesModeration.jsx`.</li>
+    </ul>
+
+    <h3>5.5 Peer Review and Rating Module</h3>
+    <p>Current implementation has UI hooks for ratings but does not yet persist rating data in the database.</p>
+    <ul>
+      <li>`NotesPage` renders star rating visuals.</li>
+      <li>`notesService` currently maps rating as placeholder (`rating: 0`, `totalRatings: 0`).</li>
+      <li>Sort option "rating" currently uses downloads as proxy because rating table/column is not yet implemented.</li>
+    </ul>
+    <p><strong>Implementation Note:</strong> A future extension can add `note_ratings(note_id, user_id, score, review_text)` with aggregation fields on `notes`.</p>
+
+    <h3>5.6 Filtering and Sorting Engine</h3>
+    <ul>
+      <li>Server-side filters in `fetchNotes({ subject, search, sortBy, limit })` using Supabase query operators.</li>
+      <li>Client-side debounced search input (300 ms) reduces query burst.</li>
+      <li>Sort options: recent, downloads (and rating proxy).</li>
+      <li>Subject options loaded dynamically from distinct subjects in notes table.</li>
+    </ul>
+
+    <h3>5.7 Dashboard and Profile Module</h3>
+    <ul>
+      <li><strong>Student Dashboard:</strong> trending notes, top contributors, user metrics, quick actions.</li>
+      <li><strong>Admin Dashboard:</strong> KPIs, monthly charts, unresolved complaints, top contributors.</li>
+      <li><strong>Profile Module:</strong> profile edit, avatar upload to `avatars` bucket, tier/points display, preference controls.</li>
+      <li><strong>Analytics Screen:</strong> user growth, uploads trend, subject distribution, top performers.</li>
+    </ul>
+  </section>
+
+  <section class="page-break">
+    <h2>Chapter 6 - Testing</h2>
+
+    <h3>6.1 Testing Strategy</h3>
+    <p>The project follows a layered strategy: UI behavior checks, service-level logic checks, integration checks against Supabase, and acceptance checks by role-specific flows.</p>
+    <ul>
+      <li>Prioritize auth, permissions, uploads, realtime delivery, and admin moderation paths.</li>
+      <li>Use realistic role-based data in Supabase to verify RLS and access boundaries.</li>
+    </ul>
+
+    <h3>6.2 Unit Testing</h3>
+    <p>Recommended unit test targets:</p>
+    <ul>
+      <li>Mapping functions in service layers (`mapNote`, `mapMessage`, `mapComplaint`, tier calculators).</li>
+      <li>Validation logic in signup and profile update flows.</li>
+      <li>Formatting helpers for file size/type and date conversions.</li>
+    </ul>
+    <p><strong>Current status:</strong> No dedicated automated unit test suite is present in the current repository snapshot.</p>
+
+    <h3>6.3 Integration Testing</h3>
+    <p>Key integration scenarios:</p>
+    <ul>
+      <li>Auth signup/login -> profile row availability -> role route redirect.</li>
+      <li>Note upload -> storage object -> note row insertion -> dashboard visibility.</li>
+      <li>Group join -> membership row -> message send permission.</li>
+      <li>Complaint update -> realtime subscription update across pages.</li>
+    </ul>
+
+    <h3>6.4 User Acceptance Testing</h3>
+    <p>UAT checklist by actor:</p>
+    <ul>
+      <li><strong>Student:</strong> register/login, upload note, search notes, join group, send message, submit complaint, edit profile.</li>
+      <li><strong>Admin:</strong> login, view analytics, moderate notes, manage users/groups, update complaint status and response.</li>
+    </ul>
+
+    <h3>6.5 Performance Testing</h3>
+    <p>Performance checks should focus on:</p>
+    <ul>
+      <li>Note search/filter response time under increasing dataset size.</li>
+      <li>Chat realtime propagation delay across concurrent users.</li>
+      <li>Dashboard aggregate query response for monthly/statistical views.</li>
+      <li>Storage upload behavior for larger files and concurrent uploads.</li>
+    </ul>
+    <p><strong>Current status:</strong> formal load-testing scripts and benchmark reports are not yet included in the current codebase.</p>
+  </section>
+
+  <section class="page-break">
+    <h2>Chapter 7 - Results and Discussion</h2>
+
+    <h3>7.1 System Output and Screen Descriptions</h3>
+    <ul>
+      <li><strong>Authentication Screens:</strong> branded login/signup with role selection and validation feedback.</li>
+      <li><strong>Student Dashboard:</strong> personalized summary, trending notes, ranking snapshot, quick actions.</li>
+      <li><strong>Notes Library:</strong> searchable and filterable content cards/list with upload modal.</li>
+      <li><strong>Chat Screen:</strong> group panel + conversation pane with near real-time message updates.</li>
+      <li><strong>Feedback Screen:</strong> complaint timeline with admin responses and status badges.</li>
+      <li><strong>Admin Screens:</strong> dashboard analytics, group management, notes moderation, user governance, complaint resolution.</li>
+      <li><strong>Profile Screen:</strong> editable personal info, avatar management, tier/points status.</li>
+    </ul>
+
+    <h3>7.2 Performance Analysis</h3>
+    <p>From implementation review, performance strengths include indexed query paths, selective queries, debounced search, and managed realtime channels. Expected operational behavior is responsive for normal academic workloads.</p>
+    <ul>
+      <li>Indexes on role, points, subject, flagged status, and time columns reduce scan costs.</li>
+      <li>Limited-result queries and sorted retrieval improve dashboard and notes page render times.</li>
+      <li>Realtime channels avoid polling overhead for chat and complaint updates.</li>
+      <li>Supabase-managed storage offloads file handling from application servers.</li>
+    </ul>
+    <p><strong>Note:</strong> quantitative benchmark values require dedicated load testing and are not yet captured in the current repository.</p>
+
+    <h3>7.3 Comparison with Existing Systems</h3>
+    <table>
+      <tr><th>Criteria</th><th>Typical LMS Content Module</th><th>Generic Chat Platform</th><th>ScholarGrid</th></tr>
+      <tr><td>Academic Note Sharing</td><td>Basic upload/download</td><td>Not specialized</td><td>Dedicated notes library with subject filtering and moderation</td></tr>
+      <tr><td>Community Interaction</td><td>Limited forum tools</td><td>Strong messaging only</td><td>Group chat + academic sharing in one platform</td></tr>
+      <tr><td>Gamification</td><td>Rare</td><td>Rare</td><td>Points + tier-based leaderboard</td></tr>
+      <tr><td>Complaint Workflow</td><td>External helpdesk in many cases</td><td>Not built-in</td><td>Integrated complaint submission and admin resolution</td></tr>
+      <tr><td>Admin Governance</td><td>Role controls vary</td><td>Usually limited for academics</td><td>User warn/ban, notes moderation, analytics dashboards</td></tr>
+      <tr><td>Security Model</td><td>Platform dependent</td><td>Platform dependent</td><td>RLS-backed data access with role-based policies</td></tr>
+    </table>
+
+    <div class="card">
+      <p><strong>Discussion Summary:</strong> ScholarGrid combines academic resource sharing, communication, governance, and analytics into one role-driven system. The strongest design advantage is direct alignment between frontend modules and Supabase policy-backed data boundaries.</p>
+    </div>
+  </section>
+
+  <section class="page-break">
+    <h2>Appendix A - Supabase Setup SQL (`supabase_setup.sql`)</h2>
+    <p>Full schema/setup script used by this project:</p>
+    <pre>-- ============================================================
+-- ScholarGrid — Complete Supabase Setup
+-- Run this ENTIRE file in your Supabase SQL Editor (one time)
+-- Go to: https://supabase.com/dashboard → Your Project → SQL Editor → New Query → Paste this → Run
+-- ============================================================
+
+-- =====================
+-- 1. TABLES
+-- =====================
+
+-- Profiles (extends auth.users)
+CREATE TABLE public.profiles (
+  id           uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  email        text NOT NULL UNIQUE,
+  full_name    text,
+  avatar_url   text,
+  role         text NOT NULL DEFAULT &#39;student&#39; CHECK (role IN (&#39;student&#39;,&#39;admin&#39;)),
+  about        text,
+  points       integer NOT NULL DEFAULT 0,
+  warnings     integer NOT NULL DEFAULT 0,
+  is_banned    boolean NOT NULL DEFAULT false,
+  created_at   timestamptz NOT NULL DEFAULT now(),
+  updated_at   timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX idx_profiles_role         ON public.profiles(role);
+CREATE INDEX idx_profiles_points_desc  ON public.profiles(points DESC);
+
+-- Groups
+CREATE TABLE public.groups (
+  id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name         text NOT NULL,
+  description  text,
+  join_code    text NOT NULL UNIQUE,
+  created_by   uuid NOT NULL REFERENCES public.profiles(id),
+  created_at   timestamptz NOT NULL DEFAULT now()
+);
+
+-- Group Members (many-to-many)
+CREATE TABLE public.group_members (
+  group_id   uuid NOT NULL REFERENCES public.groups(id)   ON DELETE CASCADE,
+  user_id    uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  joined_at  timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (group_id, user_id)
+);
+
+-- Messages (chat)
+CREATE TABLE public.messages (
+  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  group_id    uuid NOT NULL REFERENCES public.groups(id)   ON DELETE CASCADE,
+  sender_id   uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  content     text,
+  file_url    text,
+  file_name   text,
+  file_type   text,
+  created_at  timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX idx_messages_group_time ON public.messages(group_id, created_at DESC);
+
+-- Notes
+CREATE TABLE public.notes (
+  id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  uploader_id  uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  title        text NOT NULL,
+  description  text,
+  subject      text NOT NULL,
+  file_url     text NOT NULL,
+  file_name    text NOT NULL,
+  file_type    text NOT NULL,
+  file_size    bigint,
+  is_flagged   boolean NOT NULL DEFAULT false,
+  is_approved  boolean NOT NULL DEFAULT true,
+  downloads    integer NOT NULL DEFAULT 0,
+  created_at   timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX idx_notes_subject    ON public.notes(subject);
+CREATE INDEX idx_notes_uploader   ON public.notes(uploader_id);
+CREATE INDEX idx_notes_flagged    ON public.notes(is_flagged);
+
+-- Leaderboard Points (event log)
+CREATE TABLE public.leaderboard_points (
+  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id       uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  points        integer NOT NULL,
+  reason        text NOT NULL CHECK (reason IN (
+                  &#39;note_upload&#39;,&#39;note_download&#39;,&#39;login_streak&#39;,
+                  &#39;admin_bonus&#39;,&#39;penalty&#39;)),
+  reference_id  uuid,
+  created_at    timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX idx_points_user_time ON public.leaderboard_points(user_id, created_at DESC);
+
+-- Complaints
+CREATE TABLE public.complaints (
+  id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  student_id   uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  title        text NOT NULL,
+  description  text NOT NULL,
+  status       text NOT NULL DEFAULT &#39;open&#39;
+               CHECK (status IN (&#39;open&#39;,&#39;in_progress&#39;,&#39;resolved&#39;,&#39;rejected&#39;)),
+  admin_reply  text,
+  resolved_by  uuid REFERENCES public.profiles(id),
+  created_at   timestamptz NOT NULL DEFAULT now(),
+  updated_at   timestamptz NOT NULL DEFAULT now()
+);
+
+
+-- =====================
+-- 2. TRIGGERS
+-- =====================
+
+-- Auto-create profile when user signs up
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.profiles (id, email, full_name, role, created_at)
+  VALUES (
+    NEW.id,
+    NEW.email,
+    COALESCE(NEW.raw_user_meta_data-&gt;&gt;&#39;full_name&#39;, &#39;&#39;),
+    COALESCE(NEW.raw_user_meta_data-&gt;&gt;&#39;role&#39;, &#39;student&#39;),
+    NOW()
+  );
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- Auto-update updated_at timestamp
+CREATE OR REPLACE FUNCTION public.set_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_profiles_updated_at
+  BEFORE UPDATE ON public.profiles
+  FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+CREATE TRIGGER trg_complaints_updated_at
+  BEFORE UPDATE ON public.complaints
+  FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+-- Award 10 points when a note is uploaded
+CREATE OR REPLACE FUNCTION public.award_points_on_note_upload()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.leaderboard_points (user_id, points, reason, reference_id)
+  VALUES (NEW.uploader_id, 10, &#39;note_upload&#39;, NEW.id);
+
+  UPDATE public.profiles
+  SET points = points + 10
+  WHERE id = NEW.uploader_id;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER trg_award_points_note_upload
+  AFTER INSERT ON public.notes
+  FOR EACH ROW EXECUTE FUNCTION public.award_points_on_note_upload();
+
+
+-- =====================
+-- 3. ROW LEVEL SECURITY (RLS)
+-- =====================
+
+-- Profiles
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+CREATE POLICY &quot;Anyone can read profiles&quot;      ON public.profiles FOR SELECT USING (true);
+CREATE POLICY &quot;Users update own profile&quot;      ON public.profiles FOR UPDATE USING (auth.uid() = id);
+CREATE POLICY &quot;Admin can update any profile&quot;  ON public.profiles FOR UPDATE USING (
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = &#39;admin&#39;)
+);
+
+-- Groups
+ALTER TABLE public.groups ENABLE ROW LEVEL SECURITY;
+CREATE POLICY &quot;Members can read groups&quot; ON public.groups FOR SELECT USING (
+  EXISTS (SELECT 1 FROM public.group_members WHERE group_id = id AND user_id = auth.uid())
+  OR EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = &#39;admin&#39;)
+);
+CREATE POLICY &quot;Admins manage groups&quot; ON public.groups FOR ALL USING (
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = &#39;admin&#39;)
+);
+
+-- Group Members
+ALTER TABLE public.group_members ENABLE ROW LEVEL SECURITY;
+CREATE POLICY &quot;Members read own membership&quot; ON public.group_members FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY &quot;Students join groups&quot;        ON public.group_members FOR INSERT WITH CHECK (user_id = auth.uid());
+CREATE POLICY &quot;Admins manage membership&quot;    ON public.group_members FOR ALL USING (
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = &#39;admin&#39;)
+);
+
+-- Messages
+ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
+CREATE POLICY &quot;Group members read messages&quot; ON public.messages FOR SELECT USING (
+  EXISTS (SELECT 1 FROM public.group_members WHERE group_id = messages.group_id AND user_id = auth.uid())
+);
+CREATE POLICY &quot;Group members send messages&quot; ON public.messages FOR INSERT WITH CHECK (
+  sender_id = auth.uid() AND
+  EXISTS (SELECT 1 FROM public.group_members WHERE group_id = messages.group_id AND user_id = auth.uid())
+);
+CREATE POLICY &quot;Admins read all messages&quot; ON public.messages FOR SELECT USING (
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = &#39;admin&#39;)
+);
+
+-- Notes
+ALTER TABLE public.notes ENABLE ROW LEVEL SECURITY;
+CREATE POLICY &quot;All users read approved notes&quot;  ON public.notes FOR SELECT USING (is_approved = true AND is_flagged = false);
+CREATE POLICY &quot;Students upload notes&quot;          ON public.notes FOR INSERT WITH CHECK (uploader_id = auth.uid());
+CREATE POLICY &quot;Uploaders delete own notes&quot;     ON public.notes FOR DELETE USING (uploader_id = auth.uid());
+CREATE POLICY &quot;Admins manage all notes&quot;        ON public.notes FOR ALL USING (
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = &#39;admin&#39;)
+);
+
+-- Leaderboard Points
+ALTER TABLE public.leaderboard_points ENABLE ROW LEVEL SECURITY;
+CREATE POLICY &quot;Users read own points&quot;   ON public.leaderboard_points FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY &quot;Admins read all points&quot;  ON public.leaderboard_points FOR SELECT USING (
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = &#39;admin&#39;)
+);
+
+-- Complaints
+ALTER TABLE public.complaints ENABLE ROW LEVEL SECURITY;
+CREATE POLICY &quot;Students read own complaints&quot;  ON public.complaints FOR SELECT USING (student_id = auth.uid());
+CREATE POLICY &quot;Students create complaints&quot;    ON public.complaints FOR INSERT WITH CHECK (student_id = auth.uid());
+CREATE POLICY &quot;Admins manage complaints&quot;      ON public.complaints FOR ALL USING (
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = &#39;admin&#39;)
+);
+
+
+-- =====================
+-- 4. STORAGE BUCKETS
+-- =====================
+
+-- Avatars (public)
+INSERT INTO storage.buckets (id, name, public) VALUES (&#39;avatars&#39;, &#39;avatars&#39;, true);
+CREATE POLICY &quot;Public read avatars&quot;
+  ON storage.objects FOR SELECT USING (bucket_id = &#39;avatars&#39;);
+CREATE POLICY &quot;Owner uploads avatar&quot;
+  ON storage.objects FOR INSERT WITH CHECK (
+    bucket_id = &#39;avatars&#39; AND auth.uid()::text = (storage.foldername(name))[1]
+  );
+CREATE POLICY &quot;Owner deletes avatar&quot;
+  ON storage.objects FOR DELETE USING (
+    bucket_id = &#39;avatars&#39; AND auth.uid()::text = (storage.foldername(name))[1]
+  );
+
+-- Notes files (private)
+INSERT INTO storage.buckets (id, name, public) VALUES (&#39;notes-files&#39;, &#39;notes-files&#39;, false);
+CREATE POLICY &quot;Authenticated users download notes&quot;
+  ON storage.objects FOR SELECT USING (
+    bucket_id = &#39;notes-files&#39; AND auth.role() = &#39;authenticated&#39;
+  );
+CREATE POLICY &quot;Owner uploads note file&quot;
+  ON storage.objects FOR INSERT WITH CHECK (
+    bucket_id = &#39;notes-files&#39; AND auth.uid()::text = (storage.foldername(name))[1]
+  );
+CREATE POLICY &quot;Owner or admin deletes note file&quot;
+  ON storage.objects FOR DELETE USING (
+    bucket_id = &#39;notes-files&#39; AND (
+      auth.uid()::text = (storage.foldername(name))[1]
+      OR EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = &#39;admin&#39;)
+    )
+  );
+
+-- Chat files (private)
+INSERT INTO storage.buckets (id, name, public) VALUES (&#39;chat-files&#39;, &#39;chat-files&#39;, false);
+CREATE POLICY &quot;Group members download chat files&quot;
+  ON storage.objects FOR SELECT USING (
+    bucket_id = &#39;chat-files&#39; AND auth.role() = &#39;authenticated&#39;
+  );
+CREATE POLICY &quot;Group members upload chat files&quot;
+  ON storage.objects FOR INSERT WITH CHECK (
+    bucket_id = &#39;chat-files&#39; AND auth.role() = &#39;authenticated&#39;
+  );
+
+
+-- =====================
+-- 5. REALTIME
+-- =====================
+
+ALTER PUBLICATION supabase_realtime ADD TABLE public.messages;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.complaints;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.profiles;
+
+
+-- ============================================================
+-- DONE! Your database is ready.
+-- Now go to your .env file and add your Supabase URL + anon key.
+-- ============================================================
+</pre>
+  </section>
+</body>
+</html>

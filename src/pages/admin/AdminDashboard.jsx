@@ -28,17 +28,18 @@ export default function AdminDashboard() {
         fetchComplaints(null, true),
         fetchLeaderboard(5),
       ]);
-      setAnalytics(a);
-      setComplaints(c);
-      setLeaderboard(lb);
+      setAnalytics(a || { totalUsers: 0, totalNotes: 0, totalDownloads: 0 });
+      setComplaints(Array.isArray(c) ? c : []);
+      setLeaderboard(Array.isArray(lb) ? lb : []);
     } catch (err) {
       console.error('Admin dashboard error:', err);
+      setAnalytics({ totalUsers: 0, totalNotes: 0, totalDownloads: 0 });
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading || !analytics) {
+  if (loading) {
     return (
       <div className="space-y-6">
         <div className="h-40 rounded-2xl bg-gray-100 dark:bg-dark-surface animate-pulse" />

@@ -15,9 +15,33 @@ export function AuthProvider({ children }) {
     return 'Bronze';
   };
 
+  // Retry helper — retries a fetch up to `maxAttempts` times with increasing delay.
+  // Prevents ECONNREFUSED from clearing the token when the backend starts slower than Vite.
+  const fetchWithRetry = async (fn, maxAttempts = 5, delayMs = 1000) => {
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        return await fn();
+      } catch (err) {
+        const isConnRefused =
+          err.message?.includes('ECONNREFUSED') ||
+          err.message?.includes('Failed to fetch') ||
+          err.message?.includes('NetworkError') ||
+          err.message?.includes('net::ERR_CONNECTION_REFUSED');
+
+        if (isConnRefused && attempt < maxAttempts) {
+          console.warn(`[Auth] Server not ready, retrying in ${delayMs}ms… (${attempt}/${maxAttempts})`);
+          await new Promise(r => setTimeout(r, delayMs));
+          delayMs = Math.min(delayMs * 1.5, 5000); // exponential back-off, cap at 5s
+        } else {
+          throw err;
+        }
+      }
+    }
+  };
+
   // Check for existing token on mount
   useEffect(() => {
-    const timeout = setTimeout(() => setLoading(false), 5000);
+    const timeout = setTimeout(() => setLoading(false), 15000); // extended to cover retries
 
     const initSession = async () => {
       try {
@@ -28,14 +52,20 @@ export function AuthProvider({ children }) {
           return;
         }
 
-        const data = await api('/api/auth/me');
-        if (data.user) {
+        const data = await fetchWithRetry(() => api('/api/auth/me'));
+        if (data?.user) {
           setProfile(data.user);
           setUser(data.user);
         }
       } catch (err) {
-        console.error('Session restore failed:', err);
-        clearToken();
+        // Only clear the token for auth errors (401/403), not network errors
+        const isAuthError = err.message?.includes('401') || err.message?.includes('403') || err.message?.includes('Invalid') || err.message?.includes('expired');
+        if (isAuthError) {
+          console.warn('Session expired or invalid — clearing token.');
+          clearToken();
+        } else {
+          console.warn('Server unreachable during session restore — keeping token for next load.');
+        }
       } finally {
         clearTimeout(timeout);
         setLoading(false);
@@ -43,6 +73,7 @@ export function AuthProvider({ children }) {
     };
 
     initSession();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const login = async (email, password) => {

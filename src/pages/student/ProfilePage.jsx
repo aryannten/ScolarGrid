@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { uploadAvatar } from '../../services/storageService';
 import { upgradeToFaculty } from '../../services/usersService';
-import { User, Mail, Edit3, Save, Sun, Moon, Upload, Star, FileText, Download, Calendar, Award, Camera, Key } from 'lucide-react';
+import { User, Mail, Edit3, Save, Sun, Moon, Upload, Star, FileText, Download, Calendar, Award, Camera, Key, Database, Copy, CheckCircle } from 'lucide-react';
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.06 } } };
 const item = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } };
@@ -16,6 +16,8 @@ export default function ProfilePage() {
   const [form, setForm] = useState({ name: user?.name || '', about: user?.about || '' });
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [copiedId, setCopiedId] = useState(false);
+  const [copiedEmail, setCopiedEmail] = useState(false);
 
   const handleSave = async () => {
     setSaving(true);
@@ -55,6 +57,16 @@ export default function ProfilePage() {
       alert('Failed to upload avatar: ' + err.message);
     } finally {
       setUploadingAvatar(false);
+    }
+  };
+
+  const copyToClipboard = async (text, type) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      if (type === 'id') { setCopiedId(true); setTimeout(() => setCopiedId(false), 2000); }
+      else { setCopiedEmail(true); setTimeout(() => setCopiedEmail(false), 2000); }
+    } catch (err) {
+      console.error('Copy failed:', err);
     }
   };
 
@@ -128,6 +140,67 @@ export default function ProfilePage() {
             <p className="text-xs text-gray-500 dark:text-gray-400">{s.label}</p>
           </div>
         ))}
+      </motion.div>
+
+      {/* Account Information (Database Record) */}
+      <motion.div variants={item} className="glass-card p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
+            <Database className="w-4 h-4 text-emerald-500" />
+          </div>
+          <div>
+            <h3 className="text-lg font-serif font-bold text-gray-900 dark:text-white">Account Information</h3>
+            <p className="text-xs text-gray-400">Your database record — currently active session</p>
+          </div>
+          <span className="ml-auto flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold rounded-full">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse inline-block" />
+            Connected
+          </span>
+        </div>
+
+        <div className="space-y-3">
+          {/* User ID */}
+          <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-dark-surface border border-gray-100 dark:border-dark-border">
+            <div className="flex-1 min-w-0 mr-3">
+              <p className="text-xs text-gray-400 mb-0.5">User ID</p>
+              <p className="text-sm font-mono font-medium text-gray-800 dark:text-gray-200 truncate">{user?.id || '—'}</p>
+            </div>
+            <button
+              onClick={() => copyToClipboard(user?.id, 'id')}
+              className="flex-shrink-0 p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-dark-hover transition-colors"
+              title="Copy ID"
+            >
+              {copiedId ? <CheckCircle className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4 text-gray-400" />}
+            </button>
+          </div>
+
+          {/* Email */}
+          <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-dark-surface border border-gray-100 dark:border-dark-border">
+            <div className="flex-1 min-w-0 mr-3">
+              <p className="text-xs text-gray-400 mb-0.5">Email Address</p>
+              <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{user?.email || '—'}</p>
+            </div>
+            <button
+              onClick={() => copyToClipboard(user?.email, 'email')}
+              className="flex-shrink-0 p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-dark-hover transition-colors"
+              title="Copy Email"
+            >
+              {copiedEmail ? <CheckCircle className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4 text-gray-400" />}
+            </button>
+          </div>
+
+          {/* Role + Member since */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="p-3 rounded-xl bg-gray-50 dark:bg-dark-surface border border-gray-100 dark:border-dark-border">
+              <p className="text-xs text-gray-400 mb-0.5">Role</p>
+              <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 capitalize">{user?.role || '—'}</p>
+            </div>
+            <div className="p-3 rounded-xl bg-gray-50 dark:bg-dark-surface border border-gray-100 dark:border-dark-border">
+              <p className="text-xs text-gray-400 mb-0.5">Member Since</p>
+              <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{user?.joinedAt || '—'}</p>
+            </div>
+          </div>
+        </div>
       </motion.div>
 
       {/* Settings */}
