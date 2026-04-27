@@ -3,3 +3,7 @@ node_modules
 .env.local
 .env.*.local
 dist
+
+# Ignore uploaded files and images
+server/public/uploads/*
+!server/public/uploads/.gitkeep
