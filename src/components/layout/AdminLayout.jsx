@@ -36,9 +36,7 @@ export default function AdminLayout() {
       {/* Desktop Sidebar */}
       <aside className={`hidden lg:flex flex-col ${sidebarOpen ? 'w-64' : 'w-20'} bg-light-surface dark:bg-dark-surface border-r border-light-border dark:border-dark-border transition-all duration-300 flex-shrink-0`}>
         <div className="flex items-center gap-3 px-5 py-5 border-b border-light-border dark:border-dark-border">
-          <div className="w-10 h-10 rounded-xl bg-gradient-gold flex items-center justify-center flex-shrink-0">
-            <Shield className="w-5 h-5 text-white" />
-          </div>
+          <img src="/iso.png" alt="ScholarGrid Logo" className="w-10 h-10 rounded-xl object-cover shadow-sm flex-shrink-0" />
           {sidebarOpen && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="overflow-hidden">
               <h1 className="text-lg font-serif font-bold text-gray-900 dark:text-white">ScholarGrid</h1>
@@ -84,9 +82,7 @@ export default function AdminLayout() {
             >
               <div className="flex items-center justify-between px-5 py-5 border-b border-light-border dark:border-dark-border">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-gold flex items-center justify-center">
-                    <Shield className="w-5 h-5 text-white" />
-                  </div>
+                  <img src="/iso.png" alt="ScholarGrid Logo" className="w-10 h-10 rounded-xl object-cover shadow-sm" />
                   <div>
                     <h1 className="text-lg font-serif font-bold text-gray-900 dark:text-white">ScholarGrid</h1>
                     <p className="text-xs text-gold-500 font-semibold">{isSuperAdmin ? 'Super Admin Panel' : 'Faculty Panel'}</p>
