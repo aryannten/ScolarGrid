@@ -127,22 +127,6 @@ This starts both servers concurrently:
 
 ---
 
-## 🔑 Default Credentials
-
-| Role | Email | Password |
-|---|---|---|
-| Super Admin | `admin@scholargrid.com` | `password123` |
-| Faculty | `meetpatil0267@gmail.com` | `password123` |
-| Student (test) | `test4@example.com` | `password123` |
-
-### Faculty Upgrade Code
-Students can upgrade to faculty from their Profile page using the registration code:
-```
-FACULTY-2026
-```
-
----
-
 ## 🌐 API Endpoints
 
 | Method | Endpoint | Auth | Description |
