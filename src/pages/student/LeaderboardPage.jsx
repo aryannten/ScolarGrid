@@ -156,7 +156,7 @@ export default function LeaderboardPage() {
           const cfg = tierConfig[entry.tier || 'Bronze'];
           const isCurrentUser = entry.id === user?.id;
           return (
-            <div key={entry.id} className={`table-row px-6 py-3 flex items-center ${isCurrentUser ? 'bg-brand-50/50 dark:bg-brand-900/10' : ''}`}>
+            <div key={entry.id} className={`list-row px-6 py-3 flex items-center ${isCurrentUser ? 'bg-brand-50/50 dark:bg-brand-900/10' : ''}`}>
               <span className="w-16 text-sm font-bold text-gray-700 dark:text-gray-300">
                 {entry.rank <= 3 ? (
                   <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-white text-xs font-bold bg-gradient-to-br ${

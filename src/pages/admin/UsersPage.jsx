@@ -171,7 +171,7 @@ export default function UsersPage() {
               </div>
             )}
             {filtered.map(u => (
-              <div key={u.id} className={`table-row px-6 py-3 grid grid-cols-12 gap-4 items-center ${u.status === 'Banned' ? 'opacity-60' : ''}`}>
+              <div key={u.id} className={`list-row px-6 py-3 grid grid-cols-12 gap-4 items-center ${u.status === 'Banned' ? 'opacity-60' : ''}`}>
                 <div className="col-span-3 flex items-center gap-3">
                   <div className="w-9 h-9 rounded-full bg-gradient-premium flex items-center justify-center text-white text-sm font-bold flex-shrink-0">{u.name.charAt(0)}</div>
                   <div className="min-w-0">
@@ -223,7 +223,7 @@ export default function UsersPage() {
             </div>
           )}
           {codes.map(c => (
-            <div key={c.id} className="table-row px-6 py-4 grid grid-cols-12 gap-4 items-center">
+            <div key={c.id} className="list-row px-6 py-4 grid grid-cols-12 gap-4 items-center">
               <div className="col-span-5 font-mono text-sm font-semibold text-gray-900 dark:text-white">
                 {c.code}
               </div>

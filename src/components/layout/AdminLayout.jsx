@@ -138,9 +138,13 @@ export default function AdminLayout() {
 
             <div className="relative">
               <button onClick={() => setProfileOpen(!profileOpen)} className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-gray-100 dark:hover:bg-dark-hover transition-colors">
-                <div className="w-8 h-8 rounded-full bg-gradient-gold flex items-center justify-center text-white text-sm font-semibold">
-                  {user?.name?.charAt(0) || 'A'}
-                </div>
+                {user?.avatar ? (
+                  <img src={user.avatar} alt="Avatar" className="w-8 h-8 rounded-full object-cover" />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-gradient-gold flex items-center justify-center text-white text-sm font-semibold">
+                    {user?.name?.charAt(0) || 'A'}
+                  </div>
+                )}
                 <span className="hidden md:block text-sm font-medium text-gray-700 dark:text-gray-300">{user?.name || 'Admin'}</span>
                 <ChevronDown className="w-4 h-4 text-gray-400 hidden md:block" />
               </button>
