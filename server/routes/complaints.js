@@ -43,7 +43,7 @@ router.post('/', auth(), async (req, res) => {
 });
 
 // PUT /api/complaints/:id
-router.put('/:id', auth(), superadmin(), async (req, res) => {
+router.put('/:id', auth(), (req, res, next) => req.app.locals.requireRoles(['superadmin', 'faculty'])(req, res, next), async (req, res) => {
   try {
     const { db } = req.app.locals;
     const [complaints] = await db.query('SELECT * FROM complaints WHERE id = ?', [req.params.id]);

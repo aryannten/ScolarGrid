@@ -52,14 +52,7 @@ export default function SignupPage() {
         <div className="absolute bottom-0 left-0 w-80 h-80 bg-gold-500/10 rounded-full blur-3xl" />
 
         <div className="relative z-10 text-center max-w-lg flex flex-col items-center">
-          <motion.img
-            src="/iso.png"
-            alt="ScholarGrid Isometric Concept"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.8 }}
-            className="w-full max-w-sm object-contain drop-shadow-2xl mb-8"
-          />
+
 
           <h1 className="text-5xl font-serif font-bold text-white mb-4">
             Join Scholar<span className="gradient-text-gold">Grid</span>
@@ -93,12 +86,7 @@ export default function SignupPage() {
         className="w-full lg:w-1/2 flex items-center justify-center p-6 lg:p-12"
       >
         <div className="w-full max-w-md">
-          <div className="flex items-center gap-3 mb-8 lg:hidden">
-            <div className="w-10 h-10 rounded-xl bg-gradient-premium flex items-center justify-center">
-              <GraduationCap className="w-5 h-5 text-white" />
-            </div>
-            <h1 className="text-2xl font-serif font-bold text-gray-900 dark:text-white">ScholarGrid</h1>
-          </div>
+
 
           <div className="mb-8">
             <h2 className="text-3xl font-serif font-bold text-gray-900 dark:text-white mb-2">Create Account</h2>
